@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Kebijakan Privasi — Zalina Fashion</title>
+
+    <meta
+        name="description"
+        content="Kebijakan Privasi Zalina Fashion mengenai pengumpulan, penggunaan, penyimpanan, dan perlindungan data pribadi pengguna."
+    >
+
+    <style>
+        :root {
+            --maroon: #6f1d35;
+            --maroon-dark: #541329;
+            --cream: #fffaf7;
+            --cream-soft: #fdf4f0;
+            --text: #33272b;
+            --muted: #74666b;
+            --border: #eadde0;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+            background: var(--cream);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        a {
+            color: var(--maroon);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            background: rgba(255, 250, 247, 0.96);
+            backdrop-filter: blur(12px);
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-container {
+            width: min(1120px, calc(100% - 40px));
+            min-height: 76px;
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--maroon);
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .brand:hover {
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: var(--maroon);
+            text-decoration: none;
+        }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(
+                135deg,
+                #fffaf7 0%,
+                #f8ebe7 100%
+            );
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-container {
+            width: min(1120px, calc(100% - 40px));
+            margin: auto;
+            padding: 75px 0 65px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+
+            color: var(--maroon);
+            font-size: 12px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: 2px;
+
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: var(--maroon-dark);
+
+            font-size: clamp(38px, 6vw, 58px);
+            line-height: 1.15;
+
+            margin-bottom: 18px;
+        }
+
+        .hero-description {
+            max-width: 780px;
+
+            color: var(--muted);
+            font-size: 17px;
+        }
+
+        .updated {
+            margin-top: 20px;
+
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* CONTENT */
+        .layout {
+            width: min(1120px, calc(100% - 40px));
+            margin: auto;
+
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 55px;
+
+            padding: 60px 0 80px;
+        }
+
+        .toc {
+            position: sticky;
+            top: 105px;
+            align-self: start;
+
+            background: var(--white);
+
+            border: 1px solid var(--border);
+            border-radius: 18px;
+
+            padding: 22px;
+        }
+
+        .toc-title {
+            color: var(--maroon);
+
+            font-size: 13px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: 1px;
+
+            margin-bottom: 14px;
+        }
+
+        .toc a {
+            display: block;
+
+            padding: 7px 0;
+
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .toc a:hover {
+            color: var(--maroon);
+            text-decoration: none;
+        }
+
+        .content {
+            min-width: 0;
+        }
+
+        .section {
+            margin-bottom: 48px;
+            scroll-margin-top: 110px;
+        }
+
+        h2 {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: var(--maroon-dark);
+
+            font-size: 28px;
+            line-height: 1.3;
+
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            color: var(--maroon);
+            font-size: 18px;
+
+            margin: 25px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin: 12px 0 18px 22px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .notice {
+            background: var(--cream-soft);
+
+            border-left: 4px solid var(--maroon);
+
+            border-radius: 0 12px 12px 0;
+
+            padding: 18px 20px;
+
+            margin: 20px 0 25px;
+        }
+
+        .contact-box {
+            background: var(--maroon);
+            color: white;
+
+            border-radius: 18px;
+
+            padding: 28px;
+            margin-top: 25px;
+        }
+
+        .contact-box h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .contact-box a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* FOOTER */
+        .footer {
+            background: #351b25;
+            color: #ddd;
+
+            padding: 40px 20px;
+        }
+
+        .footer-container {
+            width: min(1120px, 100%);
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .footer-brand {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: white;
+
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+
+        .footer-links a {
+            color: #ddd;
+            font-size: 13px;
+        }
+
+        .copyright {
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 800px) {
+
+            .nav-container {
+                min-height: 65px;
+            }
+
+            .nav-links {
+                gap: 12px;
+            }
+
+            .nav-links a:nth-child(n+3) {
+                display: none;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .toc {
+                position: static;
+            }
+
+            .toc a {
+                display: inline-block;
+                margin-right: 14px;
+            }
+
+            .hero-container {
+                padding: 55px 0 50px;
+            }
+
+            .layout {
+                padding: 45px 0 60px;
+            }
+
+            .footer-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .nav-container,
+            .hero-container,
+            .layout {
+                width: min(100% - 28px, 1120px);
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .hero-description {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="nav-container">
+
+        <a href="/" class="brand">
+            Zalina Fashion
+        </a>
+
+        <nav class="nav-links">
+
+            <a href="/">
+                Beranda
+            </a>
+
+            <a href="/shop">
+                Belanja
+            </a>
+
+            <a href="/profile">
+                Profil
+            </a>
+
+            <a href="/terms.html">
+                Syarat & Ketentuan
+            </a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+<section class="hero">
+
+    <div class="hero-container">
+
+        <span class="eyebrow">
+            Privacy & Data Protection
+        </span>
+
+        <h1>
+            Kebijakan Privasi
+        </h1>
+
+        <p class="hero-description">
+            Kebijakan ini menjelaskan bagaimana Zalina Fashion
+            mengumpulkan, menggunakan, menyimpan, dan melindungi
+            informasi pengguna ketika menggunakan layanan Zalina Fashion.
+        </p>
+
+        <p class="updated">
+            Terakhir diperbarui: 10 September 2026
+        </p>
+
+    </div>
+
+</section>
+
+
+<main class="layout">
+
+    <aside class="toc">
+
+        <div class="toc-title">
+            Daftar Isi
+        </div>
+
+        <a href="#pendahuluan">1. Pendahuluan</a>
+        <a href="#data">2. Data yang Dikumpulkan</a>
+        <a href="#penggunaan">3. Penggunaan Data</a>
+        <a href="#pesanan">4. Pesanan & Transaksi</a>
+        <a href="#pembayaran">5. Pembayaran</a>
+        <a href="#pengiriman">6. Pengiriman</a>
+        <a href="#keamanan">7. Keamanan Data</a>
+        <a href="#cookies">8. Cookies</a>
+        <a href="#hak">9. Hak Pengguna</a>
+        <a href="#pihak-ketiga">10. Pihak Ketiga</a>
+        <a href="#penyimpanan">11. Penyimpanan Data</a>
+        <a href="#perubahan">12. Perubahan Kebijakan</a>
+        <a href="#kontak">13. Kontak</a>
+
+    </aside>
+
+
+    <article class="content">
+
+        <section class="section" id="pendahuluan">
+
+            <h2>1. Pendahuluan</h2>
+
+            <p>
+                Selamat datang di Zalina Fashion. Kami menghargai
+                privasi pengguna dan berkomitmen untuk menjaga
+                informasi pribadi yang diberikan ketika menggunakan
+                website, membuat akun, melakukan pembelian, maupun
+                berkomunikasi dengan kami.
+            </p>
+
+            <p>
+                Kebijakan Privasi ini menjelaskan secara umum jenis
+                data yang dapat kami kumpulkan, tujuan penggunaannya,
+                cara perlindungannya, serta hak pengguna atas data
+                pribadinya.
+            </p>
+
+            <div class="notice">
+                Dengan membuat akun atau menggunakan layanan Zalina Fashion,
+                pengguna menyatakan telah membaca dan memahami
+                Kebijakan Privasi ini.
+            </div>
+
+        </section>
+
+
+        <section class="section" id="data">
+
+            <h2>2. Data yang Dikumpulkan</h2>
+
+            <p>
+                Dalam menjalankan layanan toko online, Zalina Fashion
+                dapat mengumpulkan informasi yang diberikan langsung
+                oleh pengguna.
+            </p>
+
+            <h3>Data akun</h3>
+
+            <ul>
+                <li>Nama pengguna.</li>
+                <li>Alamat email.</li>
+                <li>Informasi autentikasi akun.</li>
+                <li>Informasi lain yang diberikan ketika membuat akun.</li>
+            </ul>
+
+            <h3>Data pesanan</h3>
+
+            <ul>
+                <li>Produk yang dipesan.</li>
+                <li>Varian produk.</li>
+                <li>Jumlah produk.</li>
+                <li>Nama penerima.</li>
+                <li>Alamat pengiriman.</li>
+                <li>Nomor telepon yang diperlukan untuk pengiriman.</li>
+                <li>Status pembayaran dan pengiriman.</li>
+            </ul>
+
+            <h3>Data teknis</h3>
+
+            <p>
+                Website dapat menerima informasi teknis tertentu
+                seperti alamat IP, jenis perangkat, browser, waktu
+                akses, serta informasi teknis lainnya yang diperlukan
+                untuk keamanan dan pengoperasian website.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="penggunaan">
+
+            <h2>3. Penggunaan Data</h2>
+
+            <p>
+                Data pengguna dapat digunakan untuk tujuan yang
+                berhubungan dengan penyediaan layanan Zalina Fashion,
+                antara lain:
+            </p>
+
+            <ul>
+                <li>Membuat dan mengelola akun pengguna.</li>
+                <li>Memproses pesanan.</li>
+                <li>Memproses pembayaran.</li>
+                <li>Mengelola pengiriman.</li>
+                <li>Memberikan informasi mengenai status pesanan.</li>
+                <li>Menangani pertanyaan atau keluhan pelanggan.</li>
+                <li>Meningkatkan keamanan website.</li>
+                <li>Meningkatkan kualitas layanan.</li>
+                <li>Memenuhi kewajiban hukum yang berlaku.</li>
+            </ul>
+
+        </section>
+
+
+        <section class="section" id="pesanan">
+
+            <h2>4. Pesanan & Transaksi</h2>
+
+            <p>
+                Ketika pengguna melakukan pemesanan, informasi yang
+                diperlukan akan digunakan untuk memproses transaksi
+                tersebut.
+            </p>
+
+            <p>
+                Informasi pesanan dapat mencakup produk, varian,
+                jumlah barang, harga, alamat pengiriman, status
+                pembayaran, dan status pengiriman.
+            </p>
+
+            <p>
+                Data tersebut diperlukan agar Zalina Fashion dapat
+                menyediakan layanan sesuai dengan pesanan pengguna.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="pembayaran">
+
+            <h2>5. Pembayaran</h2>
+
+            <p>
+                Pembayaran dapat melibatkan penyedia layanan pembayaran
+                atau pihak ketiga yang mendukung proses transaksi.
+            </p>
+
+            <p>
+                Informasi pembayaran diproses sesuai dengan mekanisme
+                yang disediakan oleh metode pembayaran yang digunakan.
+            </p>
+
+            <div class="notice">
+                Pengguna tidak boleh mengirimkan PIN, password, OTP,
+                atau kode keamanan pembayaran kepada pihak lain.
+            </div>
+
+        </section>
+
+
+        <section class="section" id="pengiriman">
+
+            <h2>6. Pengiriman</h2>
+
+            <p>
+                Untuk memenuhi pesanan, Zalina Fashion dapat memberikan
+                informasi pengiriman yang diperlukan kepada penyedia
+                jasa logistik atau pihak yang membantu proses pengiriman.
+            </p>
+
+            <p>
+                Informasi tersebut dapat mencakup nama penerima,
+                alamat, nomor telepon, dan informasi terkait pesanan.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="keamanan">
+
+            <h2>7. Keamanan Data</h2>
+
+            <p>
+                Zalina Fashion berupaya menerapkan langkah-langkah
+                teknis dan organisatoris yang wajar untuk membantu
+                melindungi data pengguna dari akses, perubahan,
+                penggunaan, pengungkapan, atau penghancuran yang
+                tidak sah.
+            </p>
+
+            <p>
+                Pengguna juga bertanggung jawab untuk menjaga keamanan
+                akun dan informasi autentikasinya.
+            </p>
+
+            <ul>
+                <li>Gunakan password yang kuat.</li>
+                <li>Jangan membagikan password.</li>
+                <li>Jangan memberikan kode OTP kepada pihak lain.</li>
+                <li>Laporkan aktivitas akun yang mencurigakan.</li>
+            </ul>
+
+        </section>
+
+
+        <section class="section" id="cookies">
+
+            <h2>8. Cookies</h2>
+
+            <p>
+                Website dapat menggunakan cookie atau teknologi
+                penyimpanan serupa untuk membantu menjalankan fungsi
+                website, mempertahankan sesi pengguna, meningkatkan
+                keamanan, dan memberikan pengalaman penggunaan yang
+                lebih baik.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="hak">
+
+            <h2>9. Hak Pengguna</h2>
+
+            <p>
+                Sepanjang diperbolehkan oleh ketentuan peraturan
+                perundang-undangan yang berlaku, pengguna dapat
+                memiliki hak atas data pribadinya, termasuk hak untuk
+                memperoleh informasi mengenai pemrosesan data dan
+                mengajukan permintaan terkait data pribadi.
+            </p>
+
+            <p>
+                Permintaan terkait data dapat disampaikan melalui
+                kontak resmi Zalina Fashion. Kami dapat meminta
+                informasi tertentu untuk melakukan verifikasi.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="pihak-ketiga">
+
+            <h2>10. Pihak Ketiga</h2>
+
+            <p>
+                Dalam menjalankan layanan, Zalina Fashion dapat bekerja
+                sama dengan pihak ketiga seperti penyedia pembayaran,
+                penyedia layanan pengiriman, penyedia infrastruktur
+                teknologi, atau layanan lain yang diperlukan untuk
+                menjalankan website.
+            </p>
+
+            <p>
+                Pihak ketiga dapat memproses informasi tertentu sesuai
+                dengan fungsi layanan yang diberikan dan ketentuan
+                yang berlaku.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="penyimpanan">
+
+            <h2>11. Penyimpanan Data</h2>
+
+            <p>
+                Data pengguna disimpan selama diperlukan untuk
+                menyediakan layanan, menjalankan transaksi, memenuhi
+                kewajiban administratif atau hukum, serta tujuan lain
+                yang sah sesuai dengan ketentuan yang berlaku.
+            </p>
+
+            <p>
+                Apabila data tidak lagi diperlukan, data dapat
+                dihapus, dianonimkan, atau ditangani dengan cara lain
+                sesuai dengan kebijakan dan ketentuan yang berlaku.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="perubahan">
+
+            <h2>12. Perubahan Kebijakan</h2>
+
+            <p>
+                Zalina Fashion dapat memperbarui Kebijakan Privasi ini
+                apabila terdapat perubahan layanan, teknologi,
+                proses bisnis, atau ketentuan yang berlaku.
+            </p>
+
+            <p>
+                Versi terbaru akan ditampilkan pada halaman ini
+                beserta tanggal pembaruannya.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="kontak">
+
+            <h2>13. Kontak</h2>
+
+            <p>
+                Apabila memiliki pertanyaan, permintaan, atau keluhan
+                mengenai Kebijakan Privasi atau pemrosesan data pribadi,
+                pengguna dapat menghubungi Zalina Fashion melalui kontak
+                resmi berikut.
+            </p>
+
+            <div class="contact-box">
+
+                <h3>Hubungi Zalina Fashion</h3>
+
+                <p>
+                    Email:
+                    <a href="mailto:zalinafashion.id@gmail.com">
+                        zalinafashion.id@gmail.com
+                    </a>
+                </p>
+
+                <p style="margin-bottom:0;">
+                    Email tersebut merupakan kontak resmi yang dapat
+                    digunakan untuk pertanyaan mengenai privasi,
+                    akun, dan layanan Zalina Fashion.
+                </p>
+
+            </div>
+
+        </section>
+
+    </article>
+
+</main>
+
+
+<footer class="footer">
+
+    <div class="footer-container">
+
+        <div>
+
+            <div class="footer-brand">
+                Zalina Fashion
+            </div>
+
+            <div class="copyright">
+                © 2026 Zalina Fashion. All rights reserved.
+            </div>
+
+        </div>
+
+        <div class="footer-links">
+
+            <a href="/">
+                Beranda
+            </a>
+
+            <a href="/privacy-policy.html">
+                Kebijakan Privasi
+            </a>
+
+            <a href="/terms.html">
+                Syarat & Ketentuan
+            </a>
+
+            <a href="/faq.html">
+                FAQ
+            </a>
+
+            <a href="/shipping-return.html">
+                Pengiriman & Pengembalian
+            </a>
+
+        </div>
+
+    </div>
+
+</footer>
+
+</body>
+</html>

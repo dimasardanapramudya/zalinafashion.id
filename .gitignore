@@ -1,0 +1,33 @@
+# Laravel
+/vendor/
+/node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Laravel runtime
+/public/hot
+/public/storage
+/storage/framework/
+/storage/logs/*
+/storage/*.key
+
+# Database lokal
+/database/database.sqlite
+
+# User-generated/private files
+/storage/app/public/payment-proofs/*
+/storage/app/public/returns/*
+
+# Backup files
+*.bak
+*.backup
+*.save
+
+# Temporary archives
+/public.zip

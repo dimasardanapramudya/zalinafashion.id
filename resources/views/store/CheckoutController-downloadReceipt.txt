@@ -1,0 +1,26 @@
+public function downloadReceipt(Order $order)
+{
+    $this->ensureOwner($order);
+
+    $order->load([
+        'items',
+        'payment.method',
+    ]);
+
+    $payment = $order->payment;
+
+    if (!$payment || $payment->status !== 'verified') {
+        abort(403, 'Receipt belum tersedia karena pembayaran belum dikonfirmasi.');
+    }
+
+    $pdf = Pdf::loadView('store.receipt-pdf', [
+        'order' => $order,
+        'payment' => $payment,
+    ]);
+
+    $pdf->setPaper('a4', 'portrait');
+
+    return $pdf->download(
+        'Receipt-' . $order->order_number . '.pdf'
+    );
+}

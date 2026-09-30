@@ -1,0 +1,15 @@
+{
+    "inter": {
+        "normal": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/inter_normal_5a66f8ceb794f00a7f54c797a21283b3",
+        "500": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/inter_500_efef4d9d61ac26570557ad601dea222a",
+        "600": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/inter_600_3604d9d49b61fc3b7c29c4259c86ff89",
+        "bold": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/inter_bold_02384cdf43e3d24b76c57c66dfd114bf",
+        "800": "inter_800_43e268268a3801a5ec2cf116ab01b114"
+    },
+    "playfair display": {
+        "500_italic": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/playfair_display_500_italic_e95060c97aec28ca995b127b12fea810",
+        "500": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/playfair_display_500_91bf4bd454b182f9e98cf4c96be8c8ba",
+        "600": "\/Users\/dimasardana\/Downloads\/zalina-fashion-laravel\/storage\/fonts\/playfair_display_600_555a1287914f9012e021a3b119eb30d7",
+        "bold": "playfair_display_bold_1e531eb7e3e1e9744697b9dd01c254b4"
+    }
+}

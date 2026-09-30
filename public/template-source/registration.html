@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Register - Zalina Fashion</title>
+
+  <style>
+    /* ===== RESET ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      min-height: 100vh;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      padding: 30px 15px;
+
+      background:
+        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        url("https://i.ibb.co/qY53x4mW/Whats-App-Image-2025-08-25-at-01-48-10-46f9510f.jpg")
+        no-repeat center center fixed;
+
+      background-size: cover;
+    }
+
+    /* ===== CONTAINER ===== */
+    .container {
+      position: relative;
+
+      width: 380px;
+      max-width: 100%;
+
+      padding: 40px;
+
+      border-radius: 20px;
+
+      backdrop-filter: blur(14px);
+
+      background: rgba(255, 255, 255, 0.08);
+
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+      text-align: center;
+
+      color: #fff;
+
+      overflow: hidden;
+
+      perspective: 1000px;
+
+      transform-style: preserve-3d;
+
+      animation: floaty 6s ease-in-out infinite;
+
+      transition: transform 0.5s ease;
+    }
+
+    .container:hover {
+      transform: scale(1.03) rotateX(5deg) rotateY(5deg);
+    }
+
+    .container::before {
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+      left: 0;
+
+      width: 100%;
+      height: 100%;
+
+      background: rgba(0, 0, 0, 0.55);
+
+      border-radius: 20px;
+
+      transition: background 0.6s ease;
+
+      z-index: -1;
+    }
+
+    /* ===== ANIMATION ===== */
+    @keyframes floaty {
+
+      0%,
+      100% {
+        transform: translateY(0) rotateX(0) rotateY(0);
+      }
+
+      50% {
+        transform: translateY(-10px) rotateX(2deg) rotateY(2deg);
+      }
+    }
+
+    /* ===== TITLE ===== */
+    h2 {
+      margin-bottom: 20px;
+
+      font-size: 28px;
+
+      color: #f9c7d3;
+    }
+
+    /* ===== FORM ===== */
+    .form-group {
+      margin-bottom: 15px;
+
+      text-align: left;
+    }
+
+    .form-group label {
+      font-size: 14px;
+
+      color: #ddd;
+    }
+
+    .form-group input {
+      width: 100%;
+
+      padding: 10px;
+
+      margin-top: 5px;
+
+      border: none;
+
+      border-radius: 10px;
+
+      outline: none;
+
+      font-size: 14px;
+
+      background: rgba(255, 255, 255, 0.2);
+
+      color: #fff;
+    }
+
+    .form-group input:focus {
+      background: rgba(255, 255, 255, 0.3);
+
+      box-shadow: 0 0 10px #f9c7d3;
+    }
+
+    .form-group input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* ===== PRIVACY CHECKBOX ===== */
+    .privacy-group {
+      display: flex;
+
+      align-items: flex-start;
+
+      gap: 10px;
+
+      margin-top: 18px;
+
+      text-align: left;
+
+      font-size: 12px;
+
+      line-height: 1.6;
+
+      color: #ddd;
+    }
+
+    .privacy-group input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+
+      margin-top: 2px;
+
+      flex-shrink: 0;
+
+      cursor: pointer;
+
+      accent-color: #f9c7d3;
+    }
+
+    .privacy-group label {
+      cursor: pointer;
+    }
+
+    .privacy-group a {
+      color: #f9c7d3;
+
+      text-decoration: none;
+
+      font-weight: bold;
+    }
+
+    .privacy-group a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== ERROR ===== */
+    .privacy-error {
+      display: none;
+
+      margin-top: 8px;
+
+      text-align: left;
+
+      font-size: 12px;
+
+      color: #ffb3b3;
+    }
+
+    /* ===== BUTTON ===== */
+    button {
+      width: 100%;
+
+      padding: 12px;
+
+      border: none;
+
+      border-radius: 12px;
+
+      background: linear-gradient(45deg, #f9c7d3, #e46623);
+
+      color: #fff;
+
+      font-size: 16px;
+
+      font-weight: bold;
+
+      cursor: pointer;
+
+      transition: 0.3s;
+
+      margin-top: 18px;
+    }
+
+    button:hover {
+      background: linear-gradient(45deg, #e46623, #f9c7d3);
+
+      transform: scale(1.05);
+    }
+
+    /* ===== FOOTER TEXT ===== */
+    p {
+      margin-top: 15px;
+
+      font-size: 14px;
+    }
+
+    p a {
+      color: #f9c7d3;
+
+      text-decoration: none;
+
+      font-weight: bold;
+    }
+
+    p a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== POLICY LINKS ===== */
+    .policy-links {
+      margin-top: 15px;
+
+      font-size: 11px;
+
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .policy-links a {
+      color: #f9c7d3;
+
+      text-decoration: none;
+    }
+
+    .policy-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 25px;
+      }
+
+      h2 {
+        font-size: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h2>Register</h2>
+
+    <form id="registerForm">
+
+      <!-- FULL NAME -->
+      <div class="form-group">
+        <label for="name">Full Name</label>
+
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Enter your full name"
+          required
+        >
+      </div>
+
+      <!-- EMAIL -->
+      <div class="form-group">
+        <label for="email">Email</label>
+
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+        >
+      </div>
+
+      <!-- USERNAME -->
+      <div class="form-group">
+        <label for="username">Username</label>
+
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Create a username"
+          required
+        >
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="form-group">
+        <label for="password">Password</label>
+
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Create a password"
+          required
+        >
+      </div>
+
+      <!-- PRIVACY POLICY -->
+      <div class="privacy-group">
+
+        <input
+          type="checkbox"
+          id="privacyPolicy"
+          name="privacyPolicy"
+        >
+
+        <label for="privacyPolicy">
+
+          I have read and agree to the
+          <a href="privacy-policy.html" target="_blank">
+            Privacy Policy
+          </a>
+
+          and
+
+          <a href="terms.html" target="_blank">
+            Terms & Conditions
+          </a>
+
+          of Zalina Fashion.
+
+        </label>
+
+      </div>
+
+      <div
+        id="privacyError"
+        class="privacy-error"
+      >
+        Please agree to the Privacy Policy and Terms & Conditions before registering.
+      </div>
+
+      <!-- REGISTER BUTTON -->
+      <button type="submit">
+        Register
+      </button>
+
+      <!-- LOGIN -->
+      <p>
+        Already have an account?
+        <a href="login.html">
+          Login here
+        </a>
+      </p>
+
+      <!-- POLICY LINKS -->
+      <div class="policy-links">
+
+        <a href="privacy-policy.html">
+          Privacy Policy
+        </a>
+
+        &nbsp; • &nbsp;
+
+        <a href="terms.html">
+          Terms & Conditions
+        </a>
+
+        &nbsp; • &nbsp;
+
+        <a href="faq.html">
+          FAQ
+        </a>
+
+      </div>
+
+    </form>
+
+  </div>
+
+
+  <script>
+
+    const form = document.getElementById("registerForm");
+
+    const privacyCheckbox =
+      document.getElementById("privacyPolicy");
+
+    const privacyError =
+      document.getElementById("privacyError");
+
+
+    form.addEventListener("submit", function (e) {
+
+      e.preventDefault();
+
+
+      /* ===== GET FORM DATA ===== */
+
+      const name =
+        form.name.value.trim();
+
+      const email =
+        form.email.value.trim();
+
+      const username =
+        form.username.value.trim();
+
+      const password =
+        form.password.value;
+
+
+      /* ===== CHECK BASIC FORM ===== */
+
+      if (
+        !name ||
+        !email ||
+        !username ||
+        !password
+      ) {
+
+        alert("Please fill out all fields.");
+
+        return;
+      }
+
+
+      /* ===== CHECK PRIVACY POLICY ===== */
+
+      if (!privacyCheckbox.checked) {
+
+        privacyError.style.display = "block";
+
+        privacyCheckbox.focus();
+
+        return;
+      }
+
+
+      privacyError.style.display = "none";
+
+
+      /* ===== CONSENT DATA ===== */
+
+      const consentDate =
+        new Date().toISOString();
+
+
+      /* ===== REGISTER USER ===== */
+
+      const registeredUser = {
+
+        name: name,
+
+        email: email,
+
+        username: username,
+
+        password: password,
+
+        privacyPolicyAccepted: true,
+
+        privacyPolicyAcceptedAt: consentDate,
+
+        termsAccepted: true,
+
+        termsAcceptedAt: consentDate
+
+      };
+
+
+      /* ===== SAVE USER ===== */
+
+      localStorage.setItem(
+        "registeredUser",
+        JSON.stringify(registeredUser)
+      );
+
+
+      /* ===== SUCCESS ===== */
+
+      alert(
+        "Registration successful! Thank you for accepting our Privacy Policy and Terms & Conditions."
+      );
+
+
+      /* ===== REDIRECT ===== */
+
+      window.location.href = "login.html";
+
+    });
+
+
+    /* ===== HIDE ERROR WHEN CHECKED ===== */
+
+    privacyCheckbox.addEventListener("change", function () {
+
+      if (privacyCheckbox.checked) {
+
+        privacyError.style.display = "none";
+
+      }
+
+    });
+
+  </script>
+
+</body>
+
+</html>

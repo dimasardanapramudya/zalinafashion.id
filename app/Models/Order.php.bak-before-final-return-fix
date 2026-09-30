@@ -1,0 +1,2533 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Carbon\Carbon;
+
+class Order extends Model
+{
+
+    /*
+    |--------------------------------------------------------------------------
+    | TABLE
+    |--------------------------------------------------------------------------
+    */
+
+    protected $table = 'orders';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MASS ASSIGNMENT
+    |--------------------------------------------------------------------------
+    */
+
+    protected $fillable = [
+
+        // User
+        'user_id',
+
+
+        // Order
+        'order_number',
+
+
+        // Customer
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+
+
+        // Address
+        'shipping_address',
+        'destination_id',
+        'destination_name',
+
+
+        // Shipping
+        'shipping_courier',
+        'shipping_service',
+        'shipping_etd',
+        'shipping_weight',
+        'tracking_number',
+        'shipping_status',
+
+
+        // Price
+        'subtotal',
+        'discount_total',
+        'shipping_total',
+        'grand_total',
+
+
+        // Main Status
+        'status',
+
+
+        // Payment
+        'payment_status',
+        'payment_method',
+        'payment_reference',
+        'paid_at',
+
+
+        // Delivery
+        'delivered_at',
+
+
+        // Return System
+        'return_status',
+        'return_reason',
+        'return_note',
+        'return_requested_at',
+        'return_approved_at',
+        'return_rejected_at',
+
+
+        // Refund System
+        'refund_status',
+        'refund_amount',
+        'refund_note',
+        'refunded_at',
+
+
+        // Cancel
+        'cancel_reason',
+        'cancelled_at',
+
+    ];
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CAST
+    |--------------------------------------------------------------------------
+    */
+
+    protected function casts(): array
+    {
+        return [
+
+            'user_id'
+                => 'integer',
+
+            'destination_id'
+                => 'integer',
+
+
+            'shipping_weight'
+                => 'integer',
+
+
+            'subtotal'
+                => 'decimal:2',
+
+            'discount_total'
+                => 'decimal:2',
+
+            'shipping_total'
+                => 'decimal:2',
+
+            'grand_total'
+                => 'decimal:2',
+
+
+            'refund_amount'
+                => 'decimal:2',
+
+
+            'paid_at'
+                => 'datetime',
+
+
+            'delivered_at'
+                => 'datetime',
+
+
+            'return_requested_at'
+                => 'datetime',
+
+            'return_approved_at'
+                => 'datetime',
+
+            'return_rejected_at'
+                => 'datetime',
+
+
+            'refunded_at'
+                => 'datetime',
+
+
+            'cancelled_at'
+                => 'datetime',
+
+        ];
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONSTANT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+
+    public const STATUS_PENDING =
+        'pending';
+
+
+    public const STATUS_PROCESSING =
+        'processing';
+
+
+    public const STATUS_SHIPPED =
+        'shipped';
+
+
+    public const STATUS_DELIVERED =
+        'delivered';
+
+
+    public const STATUS_CANCELLED =
+        'cancelled';
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+
+    public const PAYMENT_PENDING =
+        'pending';
+
+
+    public const PAYMENT_PAID =
+        'paid';
+
+
+    public const PAYMENT_FAILED =
+        'failed';
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHIPPING STATUS
+    |--------------------------------------------------------------------------
+    */
+
+
+    public const SHIPPING_WAITING =
+        'waiting';
+
+
+    public const SHIPPING_PACKING =
+        'packing';
+
+
+    public const SHIPPING_PACKED =
+        'packed';
+
+
+    public const SHIPPING_COURIER =
+        'handed_to_courier';
+
+
+    public const SHIPPING_TRANSIT =
+        'shipped';
+
+
+    public const SHIPPING_DELIVERED =
+        'delivered';
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN STATUS
+    |--------------------------------------------------------------------------
+    */
+
+
+    public const RETURN_NONE =
+        'none';
+
+
+    public const RETURN_REQUESTED =
+        'requested';
+
+
+    public const RETURN_APPROVED =
+        'approved';
+
+
+    public const RETURN_REJECTED =
+        'rejected';
+
+
+    public const RETURN_COMPLETED =
+        'completed';
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REFUND STATUS
+    |--------------------------------------------------------------------------
+    */
+
+
+    public const REFUND_NONE =
+        'none';
+
+
+    public const REFUND_PENDING =
+        'pending';
+
+
+    public const REFUND_PROCESSING =
+        'processing';
+
+
+    public const REFUND_COMPLETED =
+        'completed';
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIP
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class
+        );
+    }
+
+
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(
+            OrderItem::class
+        );
+    }
+
+
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(
+            Payment::class
+        );
+    }
+        /*
+    |--------------------------------------------------------------------------
+    | SHIPPING ENGINE
+    |--------------------------------------------------------------------------
+    */
+
+
+    public static function shippingStatuses(): array
+    {
+        return [
+
+            self::SHIPPING_WAITING,
+
+            self::SHIPPING_PACKING,
+
+            self::SHIPPING_PACKED,
+
+            self::SHIPPING_COURIER,
+
+            self::SHIPPING_TRANSIT,
+
+            self::SHIPPING_DELIVERED,
+
+        ];
+    }
+
+
+
+    public static function shippingLabels(): array
+    {
+        return [
+
+            self::SHIPPING_WAITING =>
+                'Menunggu Diproses',
+
+            self::SHIPPING_PACKING =>
+                'Sedang Dikemas',
+
+            self::SHIPPING_PACKED =>
+                'Pesanan Dikemas',
+
+            self::SHIPPING_COURIER =>
+                'Diserahkan ke Kurir',
+
+            self::SHIPPING_TRANSIT =>
+                'Dalam Pengiriman',
+
+            self::SHIPPING_DELIVERED =>
+                'Telah Sampai',
+
+        ];
+    }
+
+
+
+    public function getShippingStatus(): string
+    {
+        if (
+
+            empty($this->shipping_status)
+
+        ) {
+
+            return self::SHIPPING_WAITING;
+
+        }
+
+
+        if (
+
+            !in_array(
+
+                $this->shipping_status,
+
+                self::shippingStatuses(),
+
+                true
+
+            )
+
+        ) {
+
+            return self::SHIPPING_WAITING;
+
+        }
+
+
+        return $this->shipping_status;
+    }
+
+
+
+    public function getShippingStatusLabel(): string
+    {
+        return self::shippingLabels()[
+
+            $this->getShippingStatus()
+
+        ] ?? 'Menunggu Diproses';
+    }
+
+
+
+    public function setShippingStatus(
+        string $status
+    ): bool {
+
+        if (
+
+            !in_array(
+
+                $status,
+
+                self::shippingStatuses(),
+
+                true
+
+            )
+
+        ) {
+
+            return false;
+
+        }
+
+
+        $this->shipping_status = $status;
+
+
+        if (
+
+            $status === self::SHIPPING_DELIVERED
+
+        ) {
+
+            $this->status =
+                self::STATUS_DELIVERED;
+
+
+            $this->delivered_at =
+                now();
+
+        }
+
+
+        if (
+
+            $status === self::SHIPPING_TRANSIT
+
+        ) {
+
+            $this->status =
+                self::STATUS_SHIPPED;
+
+        }
+
+
+        return $this->save();
+    }
+
+
+
+    public function shippingProgress(): array
+    {
+        return [
+
+            [
+
+                'key'=>'waiting',
+
+                'label'=>'Pesanan Dibuat',
+
+                'done'=>true,
+
+            ],
+
+
+            [
+
+                'key'=>'packing',
+
+                'label'=>'Sedang Dikemas',
+
+                'done'=>
+                    $this->shippingStepCompleted(
+                        'packing'
+                    ),
+
+            ],
+
+
+            [
+
+                'key'=>'packed',
+
+                'label'=>'Paket Siap',
+
+                'done'=>
+                    $this->shippingStepCompleted(
+                        'packed'
+                    ),
+
+            ],
+
+
+            [
+
+                'key'=>'courier',
+
+                'label'=>'Diserahkan Kurir',
+
+                'done'=>
+                    $this->shippingStepCompleted(
+                        'handed_to_courier'
+                    ),
+
+            ],
+
+
+            [
+
+                'key'=>'transit',
+
+                'label'=>'Dalam Pengiriman',
+
+                'done'=>
+                    $this->shippingStepCompleted(
+                        'shipped'
+                    ),
+
+            ],
+
+
+            [
+
+                'key'=>'delivered',
+
+                'label'=>'Selesai',
+
+                'done'=>
+                    $this->shippingStepCompleted(
+                        'delivered'
+                    ),
+
+            ],
+
+        ];
+    }
+
+
+
+    public function shippingStepCompleted(
+        string $step
+    ): bool {
+
+        $steps =
+            self::shippingStatuses();
+
+
+        $current =
+            array_search(
+
+                $this->getShippingStatus(),
+
+                $steps,
+
+                true
+
+            );
+
+
+        $target =
+            array_search(
+
+                $step,
+
+                $steps,
+
+                true
+
+            );
+
+
+        if (
+
+            $current === false ||
+
+            $target === false
+
+        ) {
+
+            return false;
+
+        }
+
+
+        return $current >= $target;
+    }
+
+
+
+    public function isDelivered(): bool
+    {
+        return
+
+            $this->getShippingStatus()
+
+            ===
+
+            self::SHIPPING_DELIVERED;
+    }
+
+
+
+    public function isShipping(): bool
+    {
+        return in_array(
+
+            $this->getShippingStatus(),
+
+            [
+
+                self::SHIPPING_TRANSIT,
+
+                self::SHIPPING_DELIVERED,
+
+            ],
+
+            true
+
+        );
+    }
+
+
+
+    public function isPacked(): bool
+    {
+        return in_array(
+
+            $this->getShippingStatus(),
+
+            [
+
+                self::SHIPPING_PACKED,
+
+                self::SHIPPING_COURIER,
+
+                self::SHIPPING_TRANSIT,
+
+                self::SHIPPING_DELIVERED,
+
+            ],
+
+            true
+
+        );
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRACKING SYSTEM
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function hasTracking(): bool
+    {
+        return filled(
+            $this->tracking_number
+        );
+    }
+
+
+
+    public function trackingNumber(): ?string
+    {
+        return $this->hasTracking()
+
+            ? trim(
+                $this->tracking_number
+            )
+
+            : null;
+    }
+
+
+
+    public function trackingUrl(): ?string
+    {
+        if (
+
+            !$this->hasTracking()
+
+        ) {
+
+            return null;
+
+        }
+
+
+        return match(
+
+            strtolower(
+                $this->shipping_courier
+            )
+
+        ) {
+
+
+            'jne' =>
+
+                'https://www.jne.co.id/id/tracking',
+
+            'jnt' =>
+
+                'https://www.jet.co.id/track',
+
+            'sicepat' =>
+
+                'https://www.sicepat.com/checkAwb',
+
+            'anteraja' =>
+
+                'https://anteraja.id/tracking',
+
+            default => null,
+
+        };
+    }
+
+
+
+    public function shippingMethod(): string
+    {
+        $courier =
+            strtoupper(
+                $this->shipping_courier ?? ''
+            );
+
+
+        $service =
+            strtoupper(
+                $this->shipping_service ?? ''
+            );
+
+
+        return trim(
+
+            $courier
+            .' '
+            .$service
+
+        )
+        ?: '-';
+    }
+
+
+
+    public function shippingWeight(): int
+    {
+        return (int)
+            (
+                $this->shipping_weight
+                ??
+                0
+            );
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELIVERY ESTIMATION
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function estimatedDeliveryDate(): ?Carbon
+    {
+
+        if (
+
+            !$this->created_at
+
+        ) {
+
+            return null;
+
+        }
+
+
+        preg_match(
+
+            '/\d+/',
+
+            $this->shipping_etd ?? '',
+
+            $match
+
+        );
+
+
+        $days =
+            $match[0] ?? 0;
+
+
+        return $days
+
+            ? $this->created_at
+                ->copy()
+                ->addDays($days)
+
+            : null;
+    }
+        /*
+    |--------------------------------------------------------------------------
+    | PAYMENT ENGINE
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function paymentStatuses(): array
+    {
+        return [
+
+            self::PAYMENT_PENDING,
+
+            self::PAYMENT_PAID,
+
+            self::PAYMENT_FAILED,
+
+        ];
+    }
+
+
+
+    public function paymentLabel(): string
+    {
+        return match(
+
+            strtolower(
+                (string) $this->payment_status
+            )
+
+        ) {
+
+
+            'paid',
+
+            'success',
+
+            'settled',
+
+            'verified'
+
+                => 'Sudah Dibayar',
+
+
+            'failed'
+
+                => 'Pembayaran Gagal',
+
+
+            default
+
+                => 'Menunggu Pembayaran',
+
+        };
+    }
+
+
+
+    public function isPaid(): bool
+    {
+        return in_array(
+
+            strtolower(
+                (string) $this->payment_status
+            ),
+
+            [
+
+                'paid',
+
+                'success',
+
+                'settled',
+
+                'verified',
+
+            ],
+
+            true
+
+        );
+    }
+
+
+
+    public function isUnpaid(): bool
+    {
+        return !$this->isPaid();
+    }
+
+
+
+    public function markAsPaid(
+        ?string $reference = null
+    ): bool {
+
+
+        $this->payment_status =
+            self::PAYMENT_PAID;
+
+
+        $this->payment_reference =
+            $reference;
+
+
+        $this->paid_at =
+            now();
+
+
+        return $this->save();
+
+    }
+
+
+
+    public function markPaymentFailed(
+        ?string $note = null
+    ): bool {
+
+
+        $this->payment_status =
+            self::PAYMENT_FAILED;
+
+
+        $this->payment_reference =
+            $note;
+
+
+        return $this->save();
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRICE CALCULATION
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function calculateGrandTotal(): float
+    {
+
+        return
+
+            (
+
+                (float)
+                $this->subtotal
+
+            )
+
+            -
+
+            (
+
+                (float)
+                $this->discount_total
+
+            )
+
+            +
+
+            (
+
+                (float)
+                $this->shipping_total
+
+            );
+
+    }
+
+
+
+
+    public function formattedSubtotal(): string
+    {
+
+        return number_format(
+
+            $this->subtotal,
+
+            0,
+
+            ',',
+
+            '.'
+
+        );
+
+    }
+
+
+
+    public function formattedShipping(): string
+    {
+
+        return number_format(
+
+            $this->shipping_total,
+
+            0,
+
+            ',',
+
+            '.'
+
+        );
+
+    }
+
+
+
+    public function formattedGrandTotal(): string
+    {
+
+        return number_format(
+
+            $this->grand_total,
+
+            0,
+
+            ',',
+
+            '.'
+
+        );
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INVOICE SYSTEM
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function invoiceNumber(): string
+    {
+
+        return
+
+            'INV-' .
+
+            date('Ym', strtotime(
+                $this->created_at
+            ))
+
+            .
+
+            '-' .
+
+            str_pad(
+
+                $this->id,
+
+                6,
+
+                '0',
+
+                STR_PAD_LEFT
+
+            );
+
+    }
+
+
+
+    public function invoiceData(): array
+    {
+
+        return [
+
+            'invoice_number' =>
+                $this->invoiceNumber(),
+
+
+            'order_number' =>
+                $this->order_number,
+
+
+            'customer' =>
+                $this->customer_name,
+
+
+            'email' =>
+                $this->customer_email,
+
+
+            'phone' =>
+                $this->customer_phone,
+
+
+            'subtotal' =>
+                $this->subtotal,
+
+
+            'discount' =>
+                $this->discount_total,
+
+
+            'shipping' =>
+                $this->shipping_total,
+
+
+            'total' =>
+                $this->grand_total,
+
+
+            'payment_status' =>
+                $this->paymentLabel(),
+
+
+            'paid_at' =>
+                $this->paid_at,
+
+
+        ];
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ORDER STATUS ENGINE
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function statusLabel(): string
+    {
+
+        return match(
+
+            $this->status
+
+        ) {
+
+
+            self::STATUS_PENDING =>
+
+                'Menunggu Pembayaran',
+
+
+            self::STATUS_PROCESSING =>
+
+                'Sedang Diproses',
+
+
+            self::STATUS_SHIPPED =>
+
+                'Sedang Dikirim',
+
+
+            self::STATUS_DELIVERED =>
+
+                'Selesai',
+
+
+            self::STATUS_CANCELLED =>
+
+                'Dibatalkan',
+
+
+            default =>
+
+                'Tidak Diketahui',
+
+        };
+
+    }
+
+
+
+
+    public function canCancel(): bool
+    {
+
+        return in_array(
+
+            $this->status,
+
+            [
+
+                self::STATUS_PENDING,
+
+                self::STATUS_PROCESSING,
+
+            ],
+
+            true
+
+        );
+
+    }
+
+
+
+
+    public function cancel(
+        ?string $reason = null
+    ): bool
+    {
+
+
+        if(
+            !$this->canCancel()
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->status =
+            self::STATUS_CANCELLED;
+
+
+
+        $this->cancel_reason =
+            $reason;
+
+
+
+        $this->cancelled_at =
+            now();
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER INFORMATION
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function customerName(): string
+    {
+
+        return trim(
+
+            $this->customer_name
+
+            ?:
+
+            (
+                $this->user->name
+                ??
+                '-'
+            )
+
+        );
+
+    }
+
+
+
+    public function customerPhone(): string
+    {
+
+        return
+
+            $this->customer_phone
+
+            ?:
+
+            (
+                $this->user->phone
+                ??
+                '-'
+            );
+
+    }
+
+
+
+
+    public function customerAddress(): string
+    {
+
+        return
+
+            $this->shipping_address
+
+            ?:
+
+            '-';
+
+    }
+        /*
+    |--------------------------------------------------------------------------
+    | RETURN SYSTEM
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function returnStatuses(): array
+    {
+        return [
+
+            self::RETURN_NONE,
+
+            self::RETURN_REQUESTED,
+
+            self::RETURN_APPROVED,
+
+            self::RETURN_REJECTED,
+
+            self::RETURN_COMPLETED,
+
+        ];
+    }
+
+
+
+    public function returnStatusLabel(): string
+    {
+
+        return match(
+
+            $this->return_status
+
+        ) {
+
+
+            self::RETURN_REQUESTED =>
+
+                'Menunggu Persetujuan Retur',
+
+
+
+            self::RETURN_APPROVED =>
+
+                'Retur Disetujui',
+
+
+
+            self::RETURN_REJECTED =>
+
+                'Retur Ditolak',
+
+
+
+            self::RETURN_COMPLETED =>
+
+                'Retur Selesai',
+
+
+
+            default =>
+
+                'Tidak Ada Pengajuan',
+
+        };
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN VALIDATION
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function canRequestReturn(): bool
+    {
+
+        return
+
+            $this->isDelivered()
+
+            &&
+
+            $this->return_status === self::RETURN_NONE;
+
+    }
+
+
+
+
+
+    public function canApproveReturn(): bool
+    {
+
+        return
+
+            $this->return_status
+
+            ===
+
+            self::RETURN_REQUESTED;
+
+    }
+
+
+
+
+
+    public function canRejectReturn(): bool
+    {
+
+        return
+
+            $this->return_status
+
+            ===
+
+            self::RETURN_REQUESTED;
+
+    }
+
+
+
+
+
+    public function canRefund(): bool
+    {
+
+        return in_array(
+
+            $this->return_status,
+
+            [
+
+                self::RETURN_APPROVED,
+
+                self::RETURN_COMPLETED,
+
+            ],
+
+            true
+
+        );
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REQUEST RETURN
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function requestReturn(
+        string $reason,
+        ?string $note = null
+    ): bool {
+
+
+        if(
+
+            !$this->canRequestReturn()
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->return_status =
+
+            self::RETURN_REQUESTED;
+
+
+
+        $this->return_reason =
+
+            $reason;
+
+
+
+        $this->return_customer_note =
+
+            $note;
+
+
+
+        $this->return_requested_at =
+
+            now();
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | APPROVE RETURN
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function approveReturn(): bool
+    {
+
+        if(
+
+            !$this->canApproveReturn()
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->return_status =
+
+            self::RETURN_APPROVED;
+
+
+
+        $this->return_approved_at =
+
+            now();
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REJECT RETURN
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function rejectReturn(
+        ?string $note = null
+    ): bool
+    {
+
+
+        if(
+
+            !$this->canRejectReturn()
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->return_status =
+
+            self::RETURN_REJECTED;
+
+
+
+        $this->return_customer_note =
+
+            $note;
+
+
+
+        $this->return_rejected_at =
+
+            now();
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMPLETE RETURN
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function completeReturn(): bool
+    {
+
+
+        if(
+
+            $this->return_status
+
+            !==
+
+            self::RETURN_APPROVED
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->return_status =
+
+            self::RETURN_COMPLETED;
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REFUND SYSTEM
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function refundStatuses(): array
+    {
+        return [
+
+            self::REFUND_NONE,
+
+            self::REFUND_PENDING,
+
+            self::REFUND_PROCESSING,
+
+            self::REFUND_COMPLETED,
+
+        ];
+    }
+
+
+
+
+    public function refundStatusLabel(): string
+    {
+
+        return match(
+
+            $this->refund_status
+
+        ){
+
+
+            self::REFUND_PENDING =>
+
+                'Menunggu Refund',
+
+
+
+            self::REFUND_PROCESSING =>
+
+                'Refund Diproses',
+
+
+
+            self::REFUND_COMPLETED =>
+
+                'Refund Selesai',
+
+
+
+            default =>
+
+                'Belum Ada Refund',
+
+        };
+
+    }
+
+
+
+
+
+    public function createRefund(
+        float $amount,
+        ?string $note = null
+    ): bool
+    {
+
+
+        if(
+
+            !$this->canRefund()
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->refund_status =
+
+            self::REFUND_PENDING;
+
+
+
+        $this->refund_amount =
+
+            $amount;
+
+
+
+        $this->refund_note =
+
+            $note;
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+
+    public function processRefund(): bool
+    {
+
+
+        if(
+
+            $this->refund_status
+
+            !==
+
+            self::REFUND_PENDING
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->refund_status =
+
+            self::REFUND_PROCESSING;
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+
+    public function completeRefund(): bool
+    {
+
+
+        if(
+
+            $this->refund_status
+
+            !==
+
+            self::REFUND_PROCESSING
+
+        ){
+
+            return false;
+
+        }
+
+
+
+        $this->refund_status =
+
+            self::REFUND_COMPLETED;
+
+
+
+        $this->refunded_at =
+
+            now();
+
+
+
+        return $this->save();
+
+    }
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN TIMELINE
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function returnTimeline(): array
+    {
+        $status = $this->return_status ?: 'none';
+
+        $dates = [
+            'requested' => null,
+            'approved' => $this->return_approved_at,
+            'rejected' => null,
+            'completed' => $this->return_completed_at,
+        ];
+
+        $steps = [
+            [
+                'status' => 'requested',
+                'label' => 'Pengajuan Retur',
+                'date' => $dates['requested'],
+            ],
+            [
+                'status' => 'approved',
+                'label' => 'Retur Disetujui',
+                'date' => $dates['approved'],
+            ],
+            [
+                'status' => 'rejected',
+                'label' => 'Retur Ditolak',
+                'date' => $dates['rejected'],
+            ],
+            [
+                'status' => 'completed',
+                'label' => 'Retur Selesai',
+                'date' => $dates['completed'],
+            ],
+        ];
+
+        $completedIndex = match ($status) {
+            'requested' => 0,
+            'approved' => 1,
+            'completed' => 3,
+            'rejected' => 2,
+            default => -1,
+        };
+
+        foreach ($steps as $index => &$step) {
+            $step['done'] = $completedIndex >= 0
+                && $index <= $completedIndex
+                && $step['status'] !== 'rejected';
+        }
+
+        unset($step);
+
+        return $steps;
+    }
+
+        /*
+    |--------------------------------------------------------------------------
+    | ADMIN DASHBOARD HELPERS
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function adminSummary(): array
+    {
+
+        return [
+
+            'id' =>
+                $this->id,
+
+
+            'order_number' =>
+                $this->order_number,
+
+
+            'customer' =>
+                $this->customerName(),
+
+
+            'phone' =>
+                $this->customerPhone(),
+
+
+            'total' =>
+                $this->formattedGrandTotal(),
+
+
+            'payment' =>
+                $this->paymentLabel(),
+
+
+            'status' =>
+                $this->statusLabel(),
+
+
+            'shipping' =>
+                $this->getShippingStatusLabel(),
+
+
+            'tracking' =>
+                $this->trackingNumber(),
+
+
+            'return' =>
+                $this->returnStatusLabel(),
+
+
+            'refund' =>
+                $this->refundStatusLabel(),
+
+        ];
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHIPPING LABEL DATA
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function shippingLabelData(): array
+    {
+
+        return [
+
+            'order_number' =>
+                $this->order_number,
+
+
+            'receiver' =>
+                $this->customerName(),
+
+
+            'phone' =>
+                $this->customerPhone(),
+
+
+            'address' =>
+                $this->shipping_address,
+
+
+            'destination' =>
+                $this->destination_name,
+
+
+            'courier' =>
+                strtoupper(
+                    $this->shipping_courier
+                    ??
+                    '-'
+                ),
+
+
+            'service' =>
+                $this->shipping_service
+                ??
+                '-',
+
+
+            'weight' =>
+                $this->shippingWeight()
+                .' gram',
+
+
+            'tracking' =>
+                $this->trackingNumber()
+                ??
+                'Belum tersedia',
+
+        ];
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRODUCT SUMMARY
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function totalQuantity(): int
+    {
+
+        if(
+            !$this->relationLoaded('items')
+        ){
+
+            return 0;
+
+        }
+
+
+        return (int)
+
+            $this->items->sum(
+
+                fn($item)=>
+
+                    $item->quantity ?? 0
+
+            );
+
+    }
+
+
+
+
+
+    public function totalProductLines(): int
+    {
+
+        if(
+            !$this->relationLoaded('items')
+        ){
+
+            return 0;
+
+        }
+
+
+        return $this->items->count();
+
+    }
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | API RESPONSE FORMAT
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function toApiArray(): array
+    {
+
+        return [
+
+            'id' =>
+                $this->id,
+
+
+            'order_number' =>
+                $this->order_number,
+
+
+            'customer' => [
+
+                'name' =>
+                    $this->customerName(),
+
+                'phone' =>
+                    $this->customerPhone(),
+
+                'address' =>
+                    $this->shipping_address,
+
+            ],
+
+
+            'payment'=>[
+
+                'status' =>
+                    $this->paymentLabel(),
+
+                'paid_at' =>
+                    $this->paid_at,
+
+            ],
+
+
+            'shipping'=>[
+
+                'courier' =>
+                    $this->shipping_courier,
+
+                'service' =>
+                    $this->shipping_service,
+
+                'tracking' =>
+                    $this->trackingNumber(),
+
+                'status' =>
+                    $this->getShippingStatusLabel(),
+
+                'progress' =>
+                    $this->shippingProgress(),
+
+            ],
+
+
+            'return'=>[
+
+                'status' =>
+                    $this->returnStatusLabel(),
+
+                'reason' =>
+                    $this->return_reason,
+
+            ],
+
+
+            'refund'=>[
+
+                'status' =>
+                    $this->refundStatusLabel(),
+
+                'amount' =>
+                    $this->refund_amount,
+
+            ],
+
+
+            'price'=>[
+
+                'subtotal'=>
+                    $this->subtotal,
+
+                'discount'=>
+                    $this->discount_total,
+
+                'shipping'=>
+                    $this->shipping_total,
+
+                'grand_total'=>
+                    $this->grand_total,
+
+            ],
+
+        ];
+
+    }
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | QUERY SCOPES
+    |--------------------------------------------------------------------------
+    */
+
+
+    public function scopePending(
+        Builder $query
+    ): Builder {
+
+        return $query->where(
+
+            'status',
+
+            self::STATUS_PENDING
+
+        );
+
+    }
+
+
+
+
+    public function scopePaid(
+        Builder $query
+    ): Builder {
+
+        return $query->whereIn(
+
+            'payment_status',
+
+            [
+
+                'paid',
+
+                'success',
+
+                'settled',
+
+            ]
+
+        );
+
+    }
+
+
+
+
+    public function scopeUnpaid(
+        Builder $query
+    ): Builder {
+
+        return $query->whereNotIn(
+
+            'payment_status',
+
+            [
+
+                'paid',
+
+                'success',
+
+                'settled',
+
+            ]
+
+        );
+
+    }
+
+
+
+
+    public function scopeDelivered(
+        Builder $query
+    ): Builder {
+
+        return $query->where(
+
+            'shipping_status',
+
+            self::SHIPPING_DELIVERED
+
+        );
+
+    }
+
+
+
+
+    public function scopeInShipping(
+        Builder $query
+    ): Builder {
+
+        return $query->where(
+
+            'shipping_status',
+
+            self::SHIPPING_TRANSIT
+
+        );
+
+    }
+
+
+
+
+    public function scopeReturnRequested(
+        Builder $query
+    ): Builder {
+
+        return $query->where(
+
+            'return_status',
+
+            self::RETURN_REQUESTED
+
+        );
+
+    }
+
+
+
+
+    public function scopeRefundPending(
+        Builder $query
+    ): Builder {
+
+        return $query->where(
+
+            'refund_status',
+
+            self::REFUND_PENDING
+
+        );
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATIC STATISTIC
+    |--------------------------------------------------------------------------
+    */
+
+
+    public static function dashboardStatistic(): array
+    {
+
+        return [
+
+            'total_orders'=>
+                self::count(),
+
+
+            'pending'=>
+                self::pending()->count(),
+
+
+            'paid'=>
+                self::paid()->count(),
+
+
+            'shipping'=>
+                self::inShipping()->count(),
+
+
+            'delivered'=>
+                self::delivered()->count(),
+
+
+            'return'=>
+                self::returnRequested()->count(),
+
+
+            'refund'=>
+                self::refundPending()->count(),
+
+        ];
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOT EVENTS
+    |--------------------------------------------------------------------------
+    */
+
+
+    protected static function booted(): void
+    {
+
+        static::creating(
+
+            function($order){
+
+                if(
+                    empty($order->order_number)
+                ){
+
+                    $order->order_number =
+
+                        'ZLH-'
+
+                        .
+
+                        now()->format('Ymd')
+
+                        .
+
+                        '-'
+
+                        .
+
+                        strtoupper(
+                            substr(
+                                md5(
+                                    uniqid()
+                                ),
+                                0,
+                                6
+                            )
+                        );
+
+                }
+
+
+                if(
+                    empty($order->return_status)
+                ){
+
+                    $order->return_status =
+                        self::RETURN_NONE;
+
+                }
+
+
+                if(
+                    empty($order->refund_status)
+                ){
+
+                    $order->refund_status =
+                        self::REFUND_NONE;
+
+                }
+
+            }
+
+        );
+
+    }
+
+
+
+
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Return Summary
+    |--------------------------------------------------------------------------
+    */
+
+    public function getReturnSummary(): array
+    {
+        return [
+            'status' => $this->return_status ?: 'none',
+            'reason' => $this->return_reason ?? null,
+            'description' => $this->return_description ?? null,
+            'image' => $this->return_image ?? null,
+            'customer_note' => $this->return_customer_note ?? null,
+            'admin_note' => $this->return_admin_note ?? null,
+            'approved_at' => $this->return_approved_at ?? null,
+            'completed_at' => $this->return_completed_at ?? null,
+            'courier' => $this->return_courier ?? null,
+            'shipping_service' => $this->return_shipping_service ?? null,
+            'tracking_number' => $this->return_tracking_number ?? null,
+            'refund_status' => $this->refund_status ?: 'none',
+            'refund_amount' => $this->refund_amount ?? null,
+            'refund_method' => $this->refund_method ?? null,
+            'refund_account' => $this->refund_account ?? null,
+            'refund_account_name' => $this->refund_account_name ?? null,
+            'refund_note' => $this->refund_note ?? null,
+            'refund_completed_at' => $this->refund_completed_at ?? null,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Return Timeline
+    |--------------------------------------------------------------------------
+    */
+
+
+}
+

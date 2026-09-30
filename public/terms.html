@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Syarat & Ketentuan — Zalina Fashion</title>
+
+    <meta
+        name="description"
+        content="Syarat dan Ketentuan penggunaan website, akun, pembelian, pembayaran, pengiriman, dan layanan Zalina Fashion."
+    >
+
+    <style>
+        :root {
+            --maroon: #6f1d35;
+            --maroon-dark: #541329;
+            --cream: #fffaf7;
+            --cream-soft: #fdf4f0;
+            --text: #33272b;
+            --muted: #74666b;
+            --border: #eadde0;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+            background: var(--cream);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        a {
+            color: var(--maroon);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            background: rgba(255, 250, 247, 0.96);
+            backdrop-filter: blur(12px);
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-container {
+            width: min(1120px, calc(100% - 40px));
+            min-height: 76px;
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--maroon);
+
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .brand:hover {
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-links a {
+            color: var(--text);
+
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: var(--maroon);
+            text-decoration: none;
+        }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(
+                135deg,
+                #fffaf7 0%,
+                #f8ebe7 100%
+            );
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-container {
+            width: min(1120px, calc(100% - 40px));
+            margin: auto;
+
+            padding: 75px 0 65px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+
+            color: var(--maroon);
+
+            font-size: 12px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: 2px;
+
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: var(--maroon-dark);
+
+            font-size: clamp(38px, 6vw, 58px);
+            line-height: 1.15;
+
+            margin-bottom: 18px;
+        }
+
+        .hero-description {
+            max-width: 800px;
+
+            color: var(--muted);
+            font-size: 17px;
+        }
+
+        .updated {
+            margin-top: 20px;
+
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* CONTENT */
+        .layout {
+            width: min(1120px, calc(100% - 40px));
+            margin: auto;
+
+            display: grid;
+            grid-template-columns: 250px 1fr;
+
+            gap: 55px;
+
+            padding: 60px 0 80px;
+        }
+
+        .toc {
+            position: sticky;
+            top: 105px;
+            align-self: start;
+
+            background: var(--white);
+
+            border: 1px solid var(--border);
+            border-radius: 18px;
+
+            padding: 22px;
+        }
+
+        .toc-title {
+            color: var(--maroon);
+
+            font-size: 13px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: 1px;
+
+            margin-bottom: 14px;
+        }
+
+        .toc a {
+            display: block;
+
+            padding: 7px 0;
+
+            color: var(--muted);
+
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .toc a:hover {
+            color: var(--maroon);
+            text-decoration: none;
+        }
+
+        .section {
+            margin-bottom: 48px;
+            scroll-margin-top: 110px;
+        }
+
+        h2 {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: var(--maroon-dark);
+
+            font-size: 28px;
+            line-height: 1.3;
+
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            color: var(--maroon);
+
+            font-size: 18px;
+
+            margin: 25px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin: 12px 0 18px 22px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .notice {
+            background: var(--cream-soft);
+
+            border-left: 4px solid var(--maroon);
+
+            border-radius: 0 12px 12px 0;
+
+            padding: 18px 20px;
+
+            margin: 20px 0 25px;
+        }
+
+        .important {
+            background: #f8e8ec;
+
+            border: 1px solid #e6c8d0;
+
+            border-radius: 14px;
+
+            padding: 20px;
+
+            margin: 20px 0;
+        }
+
+        .important strong {
+            color: var(--maroon-dark);
+        }
+
+        .contact-box {
+            background: var(--maroon);
+            color: white;
+
+            border-radius: 18px;
+
+            padding: 28px;
+
+            margin-top: 25px;
+        }
+
+        .contact-box h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .contact-box a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* FOOTER */
+        .footer {
+            background: #351b25;
+            color: #ddd;
+
+            padding: 40px 20px;
+        }
+
+        .footer-container {
+            width: min(1120px, 100%);
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+        }
+
+        .footer-brand {
+            font-family: Georgia, "Times New Roman", serif;
+
+            color: white;
+
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+
+        .footer-links a {
+            color: #ddd;
+            font-size: 13px;
+        }
+
+        .copyright {
+            margin-top: 20px;
+
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 800px) {
+
+            .nav-container {
+                min-height: 65px;
+            }
+
+            .nav-links {
+                gap: 12px;
+            }
+
+            .nav-links a:nth-child(n+3) {
+                display: none;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .toc {
+                position: static;
+            }
+
+            .toc a {
+                display: inline-block;
+                margin-right: 14px;
+            }
+
+            .hero-container {
+                padding: 55px 0 50px;
+            }
+
+            .layout {
+                padding: 45px 0 60px;
+            }
+
+            .footer-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .nav-container,
+            .hero-container,
+            .layout {
+                width: min(100% - 28px, 1120px);
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .hero-description {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="nav-container">
+
+        <a href="/" class="brand">
+            Zalina Fashion
+        </a>
+
+        <nav class="nav-links">
+
+            <a href="/">
+                Beranda
+            </a>
+
+            <a href="/shop">
+                Belanja
+            </a>
+
+            <a href="/profile">
+                Profil
+            </a>
+
+            <a href="/privacy-policy.html">
+                Kebijakan Privasi
+            </a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+<section class="hero">
+
+    <div class="hero-container">
+
+        <span class="eyebrow">
+            Customer Agreement
+        </span>
+
+        <h1>
+            Syarat & Ketentuan
+        </h1>
+
+        <p class="hero-description">
+            Ketentuan yang mengatur penggunaan website,
+            pembuatan akun, pemesanan produk, pembayaran,
+            pengiriman, dan penggunaan layanan Zalina Fashion.
+        </p>
+
+        <p class="updated">
+            Terakhir diperbarui: 10 September 2026
+        </p>
+
+    </div>
+
+</section>
+
+
+<main class="layout">
+
+    <aside class="toc">
+
+        <div class="toc-title">
+            Daftar Isi
+        </div>
+
+        <a href="#umum">1. Ketentuan Umum</a>
+        <a href="#akun">2. Akun Pengguna</a>
+        <a href="#produk">3. Produk</a>
+        <a href="#harga">4. Harga</a>
+        <a href="#pesanan">5. Pemesanan</a>
+        <a href="#pembayaran">6. Pembayaran</a>
+        <a href="#pengiriman">7. Pengiriman</a>
+        <a href="#pengembalian">8. Pengembalian</a>
+        <a href="#pengguna">9. Kewajiban Pengguna</a>
+        <a href="#larangan">10. Larangan</a>
+        <a href="#konten">11. Konten Website</a>
+        <a href="#gangguan">12. Gangguan Layanan</a>
+        <a href="#privasi">13. Privasi</a>
+        <a href="#perubahan">14. Perubahan Ketentuan</a>
+        <a href="#hukum">15. Hukum yang Berlaku</a>
+        <a href="#kontak">16. Kontak</a>
+
+    </aside>
+
+
+    <article>
+
+        <section class="section" id="umum">
+
+            <h2>1. Ketentuan Umum</h2>
+
+            <p>
+                Selamat datang di Zalina Fashion. Dengan mengakses,
+                membuat akun, atau menggunakan layanan website
+                Zalina Fashion, pengguna menyatakan telah membaca
+                dan memahami Syarat & Ketentuan ini.
+            </p>
+
+            <p>
+                Ketentuan ini berlaku untuk seluruh pengguna website,
+                termasuk pengunjung, pelanggan, dan pemilik akun.
+            </p>
+
+            <div class="notice">
+                Apabila pengguna tidak menyetujui ketentuan ini,
+                pengguna dapat memilih untuk tidak membuat akun
+                atau tidak menggunakan layanan Zalina Fashion.
+            </div>
+
+        </section>
+
+
+        <section class="section" id="akun">
+
+            <h2>2. Akun Pengguna</h2>
+
+            <p>
+                Beberapa fitur Zalina Fashion dapat membutuhkan
+                akun pengguna.
+            </p>
+
+            <p>
+                Pengguna bertanggung jawab untuk memberikan informasi
+                yang benar, akurat, dan dapat dipertanggungjawabkan
+                ketika membuat akun.
+            </p>
+
+            <p>
+                Pengguna bertanggung jawab menjaga keamanan
+                informasi login miliknya.
+            </p>
+
+            <ul>
+                <li>Menjaga kerahasiaan password.</li>
+                <li>Tidak membagikan akun kepada pihak lain.</li>
+                <li>Tidak menggunakan akun untuk aktivitas ilegal.</li>
+                <li>Melaporkan aktivitas akun yang mencurigakan.</li>
+            </ul>
+
+        </section>
+
+
+        <section class="section" id="produk">
+
+            <h2>3. Produk</h2>
+
+            <p>
+                Zalina Fashion berusaha menampilkan informasi produk
+                secara jelas, termasuk nama, varian, ukuran, warna,
+                harga, dan ketersediaan stok.
+            </p>
+
+            <p>
+                Tampilan warna produk pada layar perangkat dapat
+                berbeda dengan warna produk sebenarnya karena
+                perbedaan perangkat, layar, pencahayaan, dan
+                kondisi fotografi.
+            </p>
+
+            <p>
+                Ketersediaan produk dapat berubah sewaktu-waktu
+                mengikuti kondisi stok.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="harga">
+
+            <h2>4. Harga</h2>
+
+            <p>
+                Harga produk yang berlaku adalah harga yang
+                ditampilkan pada website pada saat pengguna
+                melakukan pemesanan.
+            </p>
+
+            <p>
+                Zalina Fashion dapat melakukan perubahan harga,
+                promosi, diskon, atau penawaran tertentu sesuai
+                kebijakan yang berlaku.
+            </p>
+
+            <div class="important">
+
+                <strong>Perhatian:</strong>
+
+                <p style="margin-top:8px;margin-bottom:0;">
+                    Apabila terdapat kesalahan teknis yang menyebabkan
+                    informasi harga atau produk ditampilkan secara
+                    tidak semestinya, Zalina Fashion dapat melakukan
+                    koreksi sesuai kondisi transaksi dan ketentuan
+                    yang berlaku.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <section class="section" id="pesanan">
+
+            <h2>5. Pemesanan</h2>
+
+            <p>
+                Pengguna dapat melakukan pemesanan dengan memilih
+                produk dan varian yang tersedia, memasukkannya ke
+                keranjang, kemudian menyelesaikan proses checkout.
+            </p>
+
+            <p>
+                Pengguna bertanggung jawab memastikan informasi
+                pesanan telah benar sebelum menyelesaikan transaksi.
+            </p>
+
+            <h3>Informasi yang perlu diperiksa</h3>
+
+            <ul>
+                <li>Produk.</li>
+                <li>Varian atau warna.</li>
+                <li>Jumlah barang.</li>
+                <li>Alamat pengiriman.</li>
+                <li>Nomor telepon penerima.</li>
+                <li>Metode pembayaran.</li>
+                <li>Metode pengiriman.</li>
+            </ul>
+
+        </section>
+
+
+        <section class="section" id="pembayaran">
+
+            <h2>6. Pembayaran</h2>
+
+            <p>
+                Pesanan dapat memerlukan pembayaran sebelum diproses,
+                sesuai metode pembayaran yang tersedia pada website.
+            </p>
+
+            <p>
+                Status pembayaran akan mengikuti informasi yang
+                diterima dan diproses oleh sistem atau penyedia
+                pembayaran terkait.
+            </p>
+
+            <div class="notice">
+                Jangan pernah memberikan password, PIN, OTP,
+                atau kode keamanan pembayaran kepada pihak lain
+                yang mengatasnamakan Zalina Fashion.
+            </div>
+
+        </section>
+
+
+        <section class="section" id="pengiriman">
+
+            <h2>7. Pengiriman</h2>
+
+            <p>
+                Pesanan yang telah memenuhi persyaratan pemrosesan
+                akan dipersiapkan untuk dikirim melalui layanan
+                pengiriman yang tersedia.
+            </p>
+
+            <p>
+                Estimasi pengiriman dapat dipengaruhi oleh lokasi
+                tujuan, jasa pengiriman, kondisi operasional,
+                cuaca, hari libur, dan faktor lain di luar kendali
+                Zalina Fashion.
+            </p>
+
+            <p>
+                Pengguna wajib memastikan alamat dan nomor telepon
+                penerima telah benar.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="pengembalian">
+
+            <h2>8. Pengembalian & Komplain</h2>
+
+            <p>
+                Pengajuan pengembalian atau komplain dapat dilakukan
+                sesuai kebijakan pengembalian yang berlaku pada
+                Zalina Fashion.
+            </p>
+
+            <p>
+                Untuk membantu proses pemeriksaan, pengguna dapat
+                diminta memberikan informasi seperti nomor pesanan,
+                foto atau video kondisi barang, serta keterangan
+                mengenai masalah yang dialami.
+            </p>
+
+            <p>
+                Ketentuan detail mengenai pengiriman dan pengembalian
+                dapat dilihat pada halaman:
+            </p>
+
+            <p>
+                <a href="/shipping-return.html">
+                    Pengiriman & Pengembalian →
+                </a>
+            </p>
+
+        </section>
+
+
+        <section class="section" id="pengguna">
+
+            <h2>9. Kewajiban Pengguna</h2>
+
+            <p>
+                Pengguna wajib menggunakan website secara wajar,
+                bertanggung jawab, dan sesuai dengan hukum yang berlaku.
+            </p>
+
+            <p>
+                Pengguna tidak diperbolehkan memberikan informasi
+                palsu atau menggunakan layanan untuk tujuan yang
+                merugikan Zalina Fashion maupun pihak lain.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="larangan">
+
+            <h2>10. Larangan</h2>
+
+            <p>
+                Pengguna dilarang menggunakan website untuk:
+            </p>
+
+            <ul>
+                <li>Melakukan tindakan ilegal.</li>
+                <li>Mengakses sistem tanpa izin.</li>
+                <li>Mengganggu keamanan atau operasional website.</li>
+                <li>Melakukan manipulasi transaksi.</li>
+                <li>Menggunakan akun milik orang lain tanpa izin.</li>
+                <li>Menyebarkan malware atau kode berbahaya.</li>
+                <li>Melakukan tindakan yang dapat merugikan pengguna lain.</li>
+            </ul>
+
+        </section>
+
+
+        <section class="section" id="konten">
+
+            <h2>11. Konten Website</h2>
+
+            <p>
+                Konten pada website Zalina Fashion dapat mencakup
+                teks, gambar, logo, desain, nama produk, elemen
+                visual, dan materi lainnya.
+            </p>
+
+            <p>
+                Konten tersebut tidak boleh digunakan kembali,
+                disalin, dimodifikasi, atau didistribusikan untuk
+                tujuan komersial tanpa izin dari pihak yang memiliki
+                hak atas konten tersebut, kecuali diperbolehkan oleh
+                hukum yang berlaku.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="gangguan">
+
+            <h2>12. Gangguan Layanan</h2>
+
+            <p>
+                Zalina Fashion dapat melakukan pemeliharaan,
+                pembaruan, atau perbaikan sistem yang dapat
+                menyebabkan sebagian atau seluruh layanan tidak
+                tersedia untuk sementara.
+            </p>
+
+            <p>
+                Kami berupaya menjaga layanan tetap tersedia,
+                tetapi tidak dapat menjamin website selalu bebas
+                dari gangguan teknis.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="privasi">
+
+            <h2>13. Privasi</h2>
+
+            <p>
+                Penggunaan data pribadi pengguna diatur lebih lanjut
+                dalam Kebijakan Privasi Zalina Fashion.
+            </p>
+
+            <p>
+                Silakan membaca:
+            </p>
+
+            <p>
+                <a href="/privacy-policy.html">
+                    Kebijakan Privasi Zalina Fashion →
+                </a>
+            </p>
+
+        </section>
+
+
+        <section class="section" id="perubahan">
+
+            <h2>14. Perubahan Ketentuan</h2>
+
+            <p>
+                Zalina Fashion dapat memperbarui Syarat & Ketentuan
+                ini dari waktu ke waktu untuk menyesuaikan perubahan
+                layanan, sistem, kebijakan internal, maupun ketentuan
+                yang berlaku.
+            </p>
+
+            <p>
+                Versi terbaru akan ditampilkan pada halaman ini
+                beserta tanggal pembaruannya.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="hukum">
+
+            <h2>15. Hukum yang Berlaku</h2>
+
+            <p>
+                Penggunaan layanan Zalina Fashion dilaksanakan dengan
+                memperhatikan ketentuan peraturan perundang-undangan
+                yang berlaku di Republik Indonesia.
+            </p>
+
+            <p>
+                Apabila terdapat ketentuan dalam halaman ini yang
+                kemudian dinyatakan tidak berlaku atau tidak dapat
+                diberlakukan berdasarkan ketentuan hukum, ketentuan
+                lainnya tetap berlaku sepanjang diperbolehkan.
+            </p>
+
+        </section>
+
+
+        <section class="section" id="kontak">
+
+            <h2>16. Kontak</h2>
+
+            <p>
+                Apabila pengguna memiliki pertanyaan mengenai
+                Syarat & Ketentuan, pesanan, pembayaran, pengiriman,
+                atau penggunaan website, silakan menghubungi
+                Zalina Fashion melalui kontak resmi berikut.
+            </p>
+
+            <div class="contact-box">
+
+                <h3>
+                    Hubungi Zalina Fashion
+                </h3>
+
+                <p>
+                    Email:
+                    <a href="mailto:zalinafashion.id@gmail.com">
+                        zalinafashion.id@gmail.com
+                    </a>
+                </p>
+
+                <p style="margin-bottom:0;">
+                    Gunakan email tersebut untuk pertanyaan mengenai
+                    layanan, akun, pesanan, maupun Syarat & Ketentuan
+                    Zalina Fashion.
+                </p>
+
+            </div>
+
+        </section>
+
+    </article>
+
+</main>
+
+
+<footer class="footer">
+
+    <div class="footer-container">
+
+        <div>
+
+            <div class="footer-brand">
+                Zalina Fashion
+            </div>
+
+            <div class="copyright">
+                © 2026 Zalina Fashion. All rights reserved.
+            </div>
+
+        </div>
+
+        <div class="footer-links">
+
+            <a href="/">
+                Beranda
+            </a>
+
+            <a href="/privacy-policy.html">
+                Kebijakan Privasi
+            </a>
+
+            <a href="/terms.html">
+                Syarat & Ketentuan
+            </a>
+
+            <a href="/faq.html">
+                FAQ
+            </a>
+
+            <a href="/shipping-return.html">
+                Pengiriman & Pengembalian
+            </a>
+
+        </div>
+
+    </div>
+
+</footer>
+
+</body>
+</html>

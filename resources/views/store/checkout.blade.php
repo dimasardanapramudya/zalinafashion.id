@@ -1,0 +1,4905 @@
+@extends('layouts.store')
+
+@section('title', 'Checkout - Zalina Fashion')
+
+@section('content')
+
+@php
+
+    /*
+    |--------------------------------------------------------------------------
+    | CART & SUBTOTAL
+    |--------------------------------------------------------------------------
+    */
+
+    $cartItems = $cart->items ?? collect();
+
+    $subtotal = 0;
+
+    foreach ($cartItems as $item) {
+
+        $price = $item->variant?->price
+            ?: $item->product?->current_price
+            ?: 0;
+
+        $subtotal += $price * (int) $item->quantity;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHIPPING WEIGHT
+    |--------------------------------------------------------------------------
+    */
+
+    $defaultWeight = (int) config(
+        'services.rajaongkir.default_weight',
+        500
+    );
+
+    $minimumWeight = (int) config(
+        'services.rajaongkir.minimum_weight',
+        100
+    );
+
+    $totalWeight = 0;
+
+    foreach ($cartItems as $item) {
+
+        $productWeight = (int) (
+            $item->variant?->weight
+            ?: $item->product?->weight
+            ?: $defaultWeight
+        );
+
+        $totalWeight +=
+            $productWeight *
+            (int) $item->quantity;
+    }
+
+    $totalWeight = max(
+        $totalWeight,
+        $minimumWeight
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GRATIS ONGKIR
+    |--------------------------------------------------------------------------
+    |
+    | Aturan SAMA PERSIS dengan CheckoutController::store() (yang menentukan
+    | ongkir final di server) dan halaman keranjang:
+    |
+    |   free_shipping_enabled = 1  DAN  subtotal >= free_shipping_minimum
+    |
+    | Kalau terpenuhi, pembeli tidak membayar ongkir: opsi kurir tetap
+    | dipilih (dibutuhkan untuk pengiriman) tapi biayanya ditampilkan GRATIS
+    | dan tidak masuk ke estimasi total.
+    |
+    */
+
+    $freeShippingEnabled = (string) \App\Models\Setting::value(
+        'free_shipping_enabled',
+        '0'
+    ) === '1';
+
+    $freeShippingMinimum = (float) \App\Models\Setting::value(
+        'free_shipping_minimum',
+        250000
+    );
+
+    $isFreeShipping = $freeShippingEnabled
+        && $subtotal >= $freeShippingMinimum;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BIAYA ADMIN
+    |--------------------------------------------------------------------------
+    |
+    | Dari Setting (key: admin_fee), sama dengan yang dipakai
+    | CheckoutController::store() saat membuat pesanan. Default Rp2.000.
+    |
+    */
+
+    $adminFee = max(
+        0,
+        (float) \App\Models\Setting::value('admin_fee', 2000)
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT LOGO DIRECTORY
+    |--------------------------------------------------------------------------
+    */
+
+    $paymentLogoDirectory =
+        'images/payment-methods';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | OLD ADDRESS VALUES
+    |--------------------------------------------------------------------------
+    |
+    | Nilai ini dipertahankan agar ketika validasi backend gagal,
+    | data yang sudah diisi pengguna tidak hilang.
+    |
+    */
+
+    $oldProvince =
+        old('shipping_province');
+
+    $oldCity =
+        old('shipping_city');
+
+    $oldDistrict =
+        old('shipping_district');
+
+    $oldSubdistrict =
+        old('shipping_subdistrict');
+
+    $oldPostalCode =
+        old('shipping_postal_code');
+
+    $oldAddressDetail =
+        old('shipping_address');
+
+@endphp
+
+
+<style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+    :root{
+        --zalina-wine: #631f2b;
+        --zalina-wine-dark: #7c2d3a;
+        --zalina-wine-deep: #481f2d;
+        --zalina-gold: #b98a3d;
+        --zalina-gold-soft: #f6dfaa;
+        --zalina-cream: #fbf6f1;
+        --zalina-ink: #481f2d;
+    }
+
+    .zalina-checkout{
+        font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+        background:
+            radial-gradient(ellipse at top left, rgba(143,48,75,0.06), transparent 55%),
+            radial-gradient(ellipse at bottom right, rgba(212,175,104,0.08), transparent 50%),
+            var(--zalina-cream);
+    }
+
+    .zalina-display{
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        letter-spacing: 0.01em;
+    }
+
+    .zalina-card{
+        background:#fff;
+        border:1px solid #eadcdf;
+        border-radius: 1.75rem;
+        box-shadow: 0 14px 45px rgba(72,31,45,0.05);
+        overflow: hidden;
+    }
+
+    .zalina-card-head{
+        border-bottom:1px solid #f0e5e8;
+    }
+
+    .zalina-badge{
+        border-radius: 9999px;
+        background: linear-gradient(155deg, var(--zalina-wine) 0%, var(--zalina-wine-dark) 100%);
+        box-shadow: 0 6px 16px -6px rgba(143,48,75,0.55);
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-style: italic;
+    }
+
+    .zalina-input{
+        border:1px solid #eadcdf;
+        background:#fff;
+        border-radius: 1rem;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .zalina-input:focus{
+        outline:none;
+        border-color: var(--zalina-wine);
+        box-shadow: 0 0 0 3px rgba(143,48,75,0.10);
+    }
+
+    .zalina-input:disabled{
+        background:#f5eef0;
+        color:#a58b92;
+        cursor:not-allowed;
+    }
+
+    textarea.zalina-input{
+        border-radius: 1.25rem;
+    }
+
+    .zalina-gold-rule{
+        background: linear-gradient(90deg, var(--zalina-wine) 0%, var(--zalina-gold) 100%);
+    }
+
+    .zalina-btn-primary{
+        border-radius: 9999px;
+        background: linear-gradient(155deg, var(--zalina-wine) 0%, var(--zalina-wine-dark) 100%);
+        letter-spacing: 0.03em;
+        box-shadow: 0 14px 30px -12px rgba(143,48,75,0.5);
+        transition: transform .2s ease, box-shadow .2s ease, filter .15s ease;
+    }
+
+    .zalina-btn-primary:hover:not(:disabled){
+        filter: brightness(1.06);
+        transform: translateY(-2px);
+        box-shadow: 0 18px 34px -12px rgba(143,48,75,0.55);
+    }
+
+    .zalina-summary-total{
+        border-radius: 1.5rem;
+        background: linear-gradient(155deg, var(--zalina-wine-deep) 0%, var(--zalina-wine) 100%);
+    }
+
+    .zalina-pill-box{
+        border-radius: 1.5rem;
+    }
+
+    .zalina-soft-box{
+        border-radius: 1.25rem;
+    }
+
+    .zalina-payment-card{
+        border-radius: 1.5rem;
+    }
+
+    .zalina-radio{
+        accent-color: var(--zalina-wine);
+    }
+
+</style>
+
+
+<div class="zalina-checkout min-h-screen">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-14">
+
+
+        {{-- ========================================================= --}}
+        {{-- HEADER --}}
+        {{-- ========================================================= --}}
+
+        <div class="mb-9 md:mb-12">
+
+            <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d8b66f]/40 bg-white/70 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.28em] text-[#9b7540] shadow-sm backdrop-blur">
+                <span class="h-1.5 w-1.5 rounded-full bg-[#b98a3d]"></span>
+                Zalina Fashion
+            </div>
+
+
+            <h1 class="zalina-display text-4xl md:text-5xl font-semibold tracking-tight text-[#481f2d]">
+                Checkout Pesanan
+            </h1>
+
+
+            <p class="text-sm md:text-base text-[#806b72] mt-4 max-w-2xl leading-relaxed">
+                Lengkapi informasi pemesan, alamat pengiriman, pilih layanan kurir,
+                dan metode pembayaran untuk membuat pesanan Anda.
+            </p>
+
+
+            {{-- STEPPER: checkout -> pembayaran --}}
+
+            <ol class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold">
+
+                <li class="inline-flex items-center gap-2 rounded-full bg-[#631f2b] px-4 py-2 text-white shadow-sm">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px]">1</span>
+                    Isi Data &amp; Buat Pesanan
+                </li>
+
+                <li class="text-[#c9b2b8]" aria-hidden="true">→</li>
+
+                <li class="inline-flex items-center gap-2 rounded-full border border-[#eadcdf] bg-white/80 px-4 py-2 text-[#9b7540]">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-[#f6dfaa] text-[10px] text-[#7c5a20]">2</span>
+                    Pembayaran &amp; Upload Bukti
+                </li>
+
+            </ol>
+
+
+            <div class="mt-5 flex max-w-2xl items-start gap-3 rounded-2xl border border-[#f0d9a6] bg-[#fff8e6] px-4 py-3.5 text-sm text-[#7c5a20]">
+
+                <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#b98a3d] text-[11px] font-bold text-white">
+                    !
+                </span>
+
+                <p class="leading-relaxed">
+                    <span class="font-bold">Belum perlu transfer di halaman ini.</span>
+                    Klik <span class="font-semibold">Buat Pesanan</span> terlebih dahulu.
+                    Nominal pembayaran yang pasti, nomor rekening, dan form upload bukti
+                    hanya tersedia di <span class="font-semibold">halaman Pembayaran</span>
+                    setelah pesanan dibuat.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        {{-- ========================================================= --}}
+        {{-- VALIDATION ERROR --}}
+        {{-- ========================================================= --}}
+
+        @if($errors->any())
+
+            <div class="mb-6 rounded-2xl border border-[#e3b7c2] bg-[#fdf2f4] px-5 py-4 md:px-6 md:py-5">
+
+                <div class="flex items-start gap-3">
+
+                    <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#631f2b] text-white text-xs font-bold">
+                        !
+                    </span>
+
+                    <div class="min-w-0">
+
+                        <p class="text-sm font-semibold text-[#481f2d]">
+                            Periksa kembali data pesanan Anda:
+                        </p>
+
+                        <ul class="mt-2 space-y-1 text-sm text-[#7c2d3a] list-disc list-inside">
+
+                            @foreach($errors->all() as $message)
+
+                                <li>{{ $message }}</li>
+
+                            @endforeach
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        @endif
+
+
+        {{-- ========================================================= --}}
+        {{-- FLASH ERROR --}}
+        {{-- ========================================================= --}}
+
+        @if(session('error'))
+
+            <div class="mb-6 rounded-2xl border border-[#e3b7c2] bg-[#fdf2f4] px-5 py-4 md:px-6 md:py-5 flex items-start gap-3">
+
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#631f2b] text-white text-xs font-bold">
+                    !
+                </span>
+
+                <p class="text-sm font-semibold text-[#481f2d]">
+                    {{ session('error') }}
+                </p>
+
+            </div>
+
+        @endif
+
+
+        {{-- ========================================================= --}}
+        {{-- FLASH SUCCESS --}}
+        {{-- ========================================================= --}}
+
+        @if(session('success'))
+
+            <div class="mb-6 rounded-2xl border border-[#cfe3d4] bg-[#f2faf4] px-5 py-4 md:px-6 md:py-5 flex items-start gap-3">
+
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold">
+                    ✓
+                </span>
+
+                <p class="text-sm font-semibold text-[#215a34]">
+                    {{ session('success') }}
+                </p>
+
+            </div>
+
+        @endif
+
+
+
+
+
+        {{-- ========================================================= --}}
+        {{-- CHECKOUT FORM --}}
+        {{-- ========================================================= --}}
+
+        <form
+            action="{{ route('checkout.store') }}"
+            method="POST"
+            id="checkoutForm"
+        >
+
+            @csrf
+
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+
+
+                {{-- ========================================================= --}}
+                {{-- LEFT CONTENT --}}
+                {{-- ========================================================= --}}
+
+                <div class="lg:col-span-2 space-y-6">
+
+
+
+                    {{-- ========================================================= --}}
+                    {{-- 1. INFORMASI PEMESAN --}}
+                    {{-- ========================================================= --}}
+
+                    <section class="zalina-card">
+
+                        <div class="zalina-card-head px-5 py-6 md:px-8 md:py-7">
+
+                            <div class="flex items-center gap-4">
+
+                                <div class="w-12 h-12 shrink-0 zalina-badge rounded-full text-white flex items-center justify-center text-lg">
+                                    01
+                                </div>
+
+
+                                <div>
+
+                                    <h2 class="zalina-display text-xl md:text-2xl font-semibold text-[#481f2d]">
+                                        Informasi Pemesan
+                                    </h2>
+
+
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Data kontak yang digunakan untuk pesanan Anda.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="p-5 md:p-7">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+                                {{-- NAMA --}}
+
+                                <div class="md:col-span-2">
+
+                                    <label
+                                        for="customerName"
+                                        class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                    >
+                                        Nama Lengkap
+                                    </label>
+
+
+                                    <input
+                                        type="text"
+                                        name="customer_name"
+                                        id="customerName"
+                                        value="{{ old('customer_name') }}"
+                                        required
+                                        autocomplete="name"
+                                        placeholder="Masukkan nama lengkap"
+                                        class="w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400"
+                                    >
+
+                                </div>
+
+
+
+                                {{-- EMAIL --}}
+
+                                <div>
+
+                                    <label
+                                        for="customerEmail"
+                                        class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                    >
+                                        Email
+                                    </label>
+
+
+                                    <input
+                                        type="email"
+                                        name="customer_email"
+                                        id="customerEmail"
+                                        value="{{ old('customer_email') }}"
+                                        required
+                                        autocomplete="email"
+                                        placeholder="email@example.com"
+                                        class="w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400"
+                                    >
+
+                                </div>
+
+
+
+                                {{-- WHATSAPP --}}
+
+                                <div>
+
+                                    <label
+                                        for="customerPhone"
+                                        class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                    >
+                                        Nomor WhatsApp
+                                    </label>
+
+
+                                    <input
+                                        type="text"
+                                        name="customer_phone"
+                                        id="customerPhone"
+                                        value="{{ old('customer_phone') }}"
+                                        required
+                                        autocomplete="tel"
+                                        placeholder="08xxxxxxxxxx"
+                                        class="w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400"
+                                    >
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+
+                    {{-- ========================================================= --}}
+                    {{-- 2. ALAMAT PENGIRIMAN --}}
+                    {{-- ========================================================= --}}
+
+                    <section class="zalina-card">
+
+
+                        {{-- HEADER --}}
+
+                        <div class="zalina-card-head px-5 py-6 md:px-8 md:py-7">
+
+                            <div class="flex items-center gap-4">
+
+                                <div class="w-12 h-12 shrink-0 zalina-badge rounded-full text-white flex items-center justify-center text-lg">
+                                    02
+                                </div>
+
+
+                                <div>
+
+                                    <h2 class="zalina-display text-xl md:text-2xl font-semibold text-[#481f2d]">
+                                        Alamat Pengiriman
+                                    </h2>
+
+
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Isi alamat secara berurutan dari provinsi hingga detail alamat.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        {{-- CONTENT --}}
+
+                        <div class="p-5 md:p-7 space-y-6">
+
+
+                            {{-- ================================================= --}}
+                            {{-- ADDRESS PROGRESS --}}
+                            {{-- ================================================= --}}
+
+                            <div
+                                id="addressProgress"
+                                class="border border-[#eadcdf] bg-[#fcf8f9] p-5 zalina-soft-box"
+                            >
+
+                                <div class="flex items-start gap-3">
+
+                                    <div
+                                        id="addressProgressIcon"
+                                        class="w-9 h-9 shrink-0 zalina-badge rounded-full text-white flex items-center justify-center font-semibold"
+                                    >
+                                        1
+                                    </div>
+
+
+                                    <div class="min-w-0">
+
+                                        <div
+                                            id="addressProgressTitle"
+                                            class="font-bold text-[#631f2b] text-sm"
+                                        >
+                                            Isi Provinsi terlebih dahulu
+                                        </div>
+
+
+                                        <p
+                                            id="addressProgressText"
+                                            class="text-xs text-gray-500 mt-1 leading-relaxed"
+                                        >
+                                            Setelah provinsi dipilih, Kabupaten/Kota akan dapat diisi.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- ================================================= --}}
+                            {{-- CARI WILAYAH RAJAONGKIR --}}
+                            {{-- ================================================= --}}
+
+                            <div>
+
+                                <div class="flex items-center justify-between gap-3 mb-2">
+
+                                    <label
+                                        for="destinationSearch"
+                                        class="block text-sm font-semibold text-[#481f2d]"
+                                    >
+                                        Cari Wilayah Tujuan RajaOngkir
+                                    </label>
+
+
+                                    <span
+                                        id="destinationSearchStatus"
+                                        class="text-xs font-semibold text-gray-400"
+                                    >
+                                        Langkah awal
+                                    </span>
+
+                                </div>
+
+
+                                <div class="relative">
+
+                                    <input
+                                        type="text"
+                                        id="destinationSearch"
+                                        autocomplete="off"
+                                        placeholder="Contoh: Gresik, Kebomas, Surabaya..."
+                                        class="w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400"
+                                    >
+
+                                </div>
+
+
+                                {{-- LOADING --}}
+
+                                <div
+                                    id="destinationLoading"
+                                    class="hidden mt-3 border border-[#eadcdf] bg-[#fbf2f4] px-4 py-3 text-sm text-[#631f2b] zalina-soft-box"
+                                >
+                                    Mencari wilayah...
+                                </div>
+
+
+
+                                {{-- RESULTS --}}
+
+                                <div
+                                    id="destinationResults"
+                                    class="hidden mt-3 max-h-72 overflow-y-auto border border-[#eadcdf] bg-white shadow-lg rounded-2xl"
+                                ></div>
+
+
+                                <p class="mt-2 text-xs text-gray-500">
+                                    Pilih wilayah yang sesuai. Data wilayah akan digunakan untuk menghitung ongkos kirim.
+                                </p>
+
+                            </div>
+
+
+
+                            {{-- ================================================= --}}
+                            {{-- HIDDEN DESTINATION --}}
+                            {{-- ================================================= --}}
+
+                            <input
+                                type="hidden"
+                                name="destination_id"
+                                id="destinationId"
+                                value="{{ old('destination_id') }}"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="destination_name"
+                                id="destinationName"
+                                value="{{ old('destination_name') }}"
+                            >
+
+
+
+                            {{-- ================================================= --}}
+                            {{-- SELECTED DESTINATION --}}
+                            {{-- ================================================= --}}
+
+                            <div
+                                id="selectedDestination"
+                                class="hidden border border-emerald-200 bg-emerald-50 p-4 zalina-soft-box"
+                            >
+
+                                <div class="flex items-start gap-3">
+
+                                    <div class="w-8 h-8 shrink-0 bg-green-100 text-green-700 flex items-center justify-center font-bold">
+                                        ✓
+                                    </div>
+
+
+                                    <div class="min-w-0">
+
+                                        <div class="font-semibold text-green-800 text-sm">
+                                            Wilayah tujuan terhubung
+                                        </div>
+
+
+                                        <div
+                                            id="selectedDestinationText"
+                                            class="mt-1 text-sm text-green-700 break-words"
+                                        ></div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- ================================================= --}}
+                            {{-- DETAIL WILAYAH --}}
+                            {{-- ================================================= --}}
+
+                            <div>
+
+                                <div class="mb-4">
+
+                                    <h3 class="text-base font-bold text-gray-900">
+                                        Detail Wilayah
+                                    </h3>
+
+
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Setiap bagian alamat harus lengkap sebelum melanjutkan ke bagian berikutnya.
+                                    </p>
+
+                                </div>
+
+
+                                <div class="space-y-5">
+
+
+                                    {{-- ================================================= --}}
+                                    {{-- PROVINSI --}}
+                                    {{-- ================================================= --}}
+
+                                    <div>
+
+                                        <label
+                                            for="shippingProvince"
+                                            class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                        >
+                                            Provinsi
+                                            <span class="text-red-500">*</span>
+                                        </label>
+
+
+                                        <div class="relative">
+
+                                            <input
+                                                type="text"
+                                                name="shipping_province"
+                                                id="shippingProvince"
+                                                value="{{ $oldProvince }}"
+                                                required
+                                                autocomplete="address-level1"
+                                                placeholder="Pilih / isi provinsi"
+                                                class="w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400"
+                                            >
+
+                                        </div>
+
+
+                                        <p class="mt-2 text-xs text-gray-400">
+                                            Wajib diisi sebelum Kabupaten/Kota dapat dilanjutkan.
+                                        </p>
+
+                                    </div>
+
+
+
+                                    {{-- ================================================= --}}
+                                    {{-- KABUPATEN / KOTA --}}
+                                    {{-- ================================================= --}}
+
+                                    <div>
+
+                                        <label
+                                            for="shippingCity"
+                                            class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                        >
+                                            Kabupaten / Kota
+                                            <span class="text-red-500">*</span>
+                                        </label>
+
+
+                                        <input
+                                            type="text"
+                                            name="shipping_city"
+                                            id="shippingCity"
+                                            value="{{ $oldCity }}"
+                                            required
+                                            autocomplete="address-level2"
+                                            placeholder="Isi setelah Provinsi lengkap"
+                                            disabled
+                                            class="address-dependent w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 bg-gray-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                        >
+
+
+                                        <p
+                                            id="cityHint"
+                                            class="mt-2 text-xs text-gray-400"
+                                        >
+                                            Lengkapi Provinsi terlebih dahulu.
+                                        </p>
+
+                                    </div>
+
+
+
+                                    {{-- ================================================= --}}
+                                    {{-- KECAMATAN --}}
+                                    {{-- ================================================= --}}
+
+                                    <div>
+
+                                        <label
+                                            for="shippingDistrict"
+                                            class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                        >
+                                            Kecamatan
+                                            <span class="text-red-500">*</span>
+                                        </label>
+
+
+                                        <input
+                                            type="text"
+                                            name="shipping_district"
+                                            id="shippingDistrict"
+                                            value="{{ $oldDistrict }}"
+                                            required
+                                            autocomplete="address-level3"
+                                            placeholder="Isi setelah Kabupaten/Kota lengkap"
+                                            disabled
+                                            class="address-dependent w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 bg-gray-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                        >
+
+
+                                        <p
+                                            id="districtHint"
+                                            class="mt-2 text-xs text-gray-400"
+                                        >
+                                            Lengkapi Kabupaten/Kota terlebih dahulu.
+                                        </p>
+
+                                    </div>
+
+
+
+                                    {{-- ================================================= --}}
+                                    {{-- KELURAHAN / DESA --}}
+                                    {{-- ================================================= --}}
+
+                                    <div>
+
+                                        <label
+                                            for="shippingSubdistrict"
+                                            class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                        >
+                                            Kelurahan / Desa
+                                            <span class="text-red-500">*</span>
+                                        </label>
+
+
+                                        <input
+                                            type="text"
+                                            name="shipping_subdistrict"
+                                            id="shippingSubdistrict"
+                                            value="{{ $oldSubdistrict }}"
+                                            required
+                                            autocomplete="address-level4"
+                                            placeholder="Isi setelah Kecamatan lengkap"
+                                            disabled
+                                            class="address-dependent w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 bg-gray-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                        >
+
+
+                                        <p
+                                            id="subdistrictHint"
+                                            class="mt-2 text-xs text-gray-400"
+                                        >
+                                            Lengkapi Kecamatan terlebih dahulu.
+                                        </p>
+
+                                    </div>
+
+
+
+                                    {{-- ================================================= --}}
+                                    {{-- KODE POS --}}
+                                    {{-- ================================================= --}}
+
+                                    <div>
+
+                                        <label
+                                            for="shippingPostalCode"
+                                            class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                        >
+                                            Kode Pos
+                                            <span class="text-red-500">*</span>
+                                        </label>
+
+
+                                        <input
+                                            type="text"
+                                            name="shipping_postal_code"
+                                            id="shippingPostalCode"
+                                            value="{{ $oldPostalCode }}"
+                                            required
+                                            inputmode="numeric"
+                                            autocomplete="postal-code"
+                                            maxlength="10"
+                                            placeholder="Contoh: 61111"
+                                            disabled
+                                            class="address-dependent w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 bg-gray-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                        >
+
+
+                                        <p
+                                            id="postalCodeHint"
+                                            class="mt-2 text-xs text-gray-400"
+                                        >
+                                            Lengkapi Kelurahan/Desa terlebih dahulu.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- ================================================= --}}
+                            {{-- DETAIL ALAMAT --}}
+                            {{-- ================================================= --}}
+
+                            <div>
+
+                                <label
+                                    for="shippingAddress"
+                                    class="block text-sm font-semibold text-[#481f2d] mb-2"
+                                >
+                                    Detail Alamat
+                                    <span class="text-red-500">*</span>
+                                </label>
+
+
+                                <textarea
+                                    name="shipping_address"
+                                    id="shippingAddress"
+                                    rows="5"
+                                    required
+                                    placeholder="Nama jalan, nomor rumah, RT/RW, perumahan, patokan alamat, dan informasi lainnya"
+                                    disabled
+                                    class="address-dependent w-full zalina-input px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 bg-gray-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed resize-none"
+                                >{{ $oldAddressDetail }}</textarea>
+
+
+                                <p
+                                    id="addressDetailHint"
+                                    class="mt-2 text-xs text-gray-400"
+                                >
+                                    Lengkapi seluruh wilayah dan kode pos terlebih dahulu.
+                                </p>
+
+                            </div>
+
+
+
+                            {{-- ================================================= --}}
+                            {{-- ADDRESS COMPLETION --}}
+                            {{-- ================================================= --}}
+
+                            <div
+                                id="addressComplete"
+                                class="hidden border border-emerald-200 bg-emerald-50 p-4 zalina-soft-box"
+                            >
+
+                                <div class="flex items-start gap-3">
+
+                                    <div class="w-9 h-9 shrink-0 bg-green-100 text-green-700 flex items-center justify-center font-bold">
+                                        ✓
+                                    </div>
+
+
+                                    <div>
+
+                                        <div class="font-bold text-green-800 text-sm">
+                                            Alamat siap digunakan
+                                        </div>
+
+
+                                        <p class="text-xs text-green-700 mt-1 leading-relaxed">
+                                            Data alamat sudah lengkap. Anda dapat melanjutkan ke pilihan pengiriman.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+                    </section>
+
+
+
+                    {{-- ========================================================= --}}
+                    {{-- 3. PENGIRIMAN --}}
+                    {{-- ========================================================= --}}
+
+                    <section
+                        id="shippingSection"
+                        class="zalina-card"
+                    >
+
+
+                        {{-- HEADER --}}
+
+                        <div class="zalina-card-head px-5 py-6 md:px-8 md:py-7">
+
+                            <div class="flex items-center gap-4">
+
+                                <div class="w-12 h-12 shrink-0 zalina-badge rounded-full text-white flex items-center justify-center text-lg">
+                                    03
+                                </div>
+
+
+                                <div>
+
+                                    <h2 class="zalina-display text-xl md:text-2xl font-semibold text-[#481f2d]">
+                                        Pilih Pengiriman
+                                    </h2>
+
+
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        @if($isFreeShipping)
+                                            Pilih kurir dan layanan pengiriman. Ongkos kirim gratis.
+                                        @else
+                                            Ongkos kirim dihitung otomatis berdasarkan wilayah tujuan.
+                                        @endif
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        {{-- CONTENT --}}
+
+                        <div class="p-5 md:p-7">
+
+
+                            {{-- SHIPPING HIDDEN INPUT --}}
+
+                            <input
+                                type="hidden"
+                                id="shippingWeight"
+                                value="{{ $totalWeight }}"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="shipping_weight"
+                                value="{{ $totalWeight }}"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="shipping_courier"
+                                id="shippingCourier"
+                                value="{{ old('shipping_courier') }}"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="shipping_service"
+                                id="shippingService"
+                                value="{{ old('shipping_service') }}"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="shipping_etd"
+                                id="shippingEtd"
+                                value="{{ old('shipping_etd') }}"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="shipping_cost"
+                                id="shippingCost"
+                                value="{{ old('shipping_cost', 0) }}"
+                            >
+
+
+
+                            {{-- BANNER GRATIS ONGKIR --}}
+
+                            @if($isFreeShipping)
+                                <div class="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                                    <span class="text-lg leading-none">🎉</span>
+
+                                    <div>
+                                        <div class="font-bold">
+                                            Selamat! Kamu mendapat GRATIS ONGKIR
+                                        </div>
+
+                                        <div class="mt-0.5 text-emerald-700">
+                                            Belanjamu sudah mencapai
+                                            Rp {{ number_format($freeShippingMinimum, 0, ',', '.') }}.
+                                            Pilih kurir dan layanan pengiriman di bawah;
+                                            ongkirnya tidak perlu kamu bayar.
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+
+                            {{-- WEIGHT BOX --}}
+
+                            <div class="border border-[#eadcdf] bg-[#fcf8f9] p-5 zalina-soft-box">
+
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+
+                                    <div>
+
+                                        <div class="text-xs font-bold uppercase tracking-wider text-gray-400">
+                                            Berat Pesanan
+                                        </div>
+
+
+                                        <div class="text-lg font-bold text-gray-800 mt-1">
+                                            {{ number_format($totalWeight) }} gram
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <div class="sm:text-right">
+
+                                        <div class="text-xs font-bold uppercase tracking-wider text-gray-400">
+                                            Status
+                                        </div>
+
+
+                                        <div
+                                            id="shippingStatus"
+                                            class="font-bold text-[#631f2b] mt-1"
+                                        >
+                                            Lengkapi alamat terlebih dahulu
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- SHIPPING LOCK MESSAGE --}}
+
+                            <div
+                                id="shippingAddressLock"
+                                class="mt-5 border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700 zalina-soft-box"
+                            >
+                                Lengkapi seluruh alamat pengiriman terlebih dahulu untuk melihat layanan kurir.
+                            </div>
+
+
+
+                            {{-- SHIPPING LOADING --}}
+
+                            <div
+                                id="shippingLoading"
+                                class="hidden mt-5 border border-[#eadcdf] bg-[#fbf2f4] p-4 text-sm text-[#631f2b] zalina-soft-box"
+                            >
+                                Menghitung ongkos kirim...
+                            </div>
+
+
+
+                            {{-- SHIPPING ERROR --}}
+
+                            <div
+                                id="shippingError"
+                                class="hidden mt-5 border border-red-200 bg-red-50 p-4 text-sm text-red-700 zalina-soft-box"
+                            ></div>
+
+
+
+                            {{-- SHIPPING EMPTY --}}
+
+                            <div
+                                id="shippingEmpty"
+                                class="hidden mt-5 border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700 zalina-soft-box"
+                            >
+                                Tidak ada layanan pengiriman yang tersedia untuk wilayah ini.
+                            </div>
+
+
+
+                            {{-- SHIPPING OPTIONS --}}
+
+                            <div
+                                id="shippingOptions"
+                                class="mt-5 space-y-3"
+                            ></div>
+
+                        </div>
+
+                    </section>
+
+
+
+                    {{-- ========================================================= --}}
+                    {{-- 4. METODE PEMBAYARAN --}}
+                    {{-- ========================================================= --}}
+
+                    <section class="zalina-card">
+
+
+                        {{-- HEADER --}}
+
+                        <div class="zalina-card-head px-5 py-6 md:px-8 md:py-7">
+
+                            <div class="flex items-center gap-4">
+
+                                <div class="w-12 h-12 shrink-0 zalina-badge rounded-full text-white flex items-center justify-center text-lg">
+                                    04
+                                </div>
+
+
+                                <div>
+
+                                    <h2 class="zalina-display text-xl md:text-2xl font-semibold text-[#481f2d]">
+                                        Pilih Metode Pembayaran
+                                    </h2>
+
+
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Pilih metode yang akan kamu gunakan nanti. Pembayaran
+                                        dilakukan setelah pesanan dibuat, bukan di halaman ini.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        {{-- PAYMENT METHODS --}}
+
+                        <div class="p-5 md:p-7">
+
+
+                            <div class="space-y-3">
+
+
+                                @forelse ($methods as $method)
+
+
+                                    @php
+
+                                        $methodName =
+                                            strtolower(
+                                                trim(
+                                                    $method->name ?? ''
+                                                )
+                                            );
+
+
+                                        $uploadedImage =
+                                            null;
+
+
+                                        if (
+                                            !empty(
+                                                $method->image
+                                            )
+                                        ) {
+
+                                            if (
+                                                file_exists(
+                                                    storage_path(
+                                                        'app/public/' .
+                                                        $method->image
+                                                    )
+                                                )
+                                            ) {
+
+                                                $uploadedImage =
+                                                    asset(
+                                                        'storage/' .
+                                                        $method->image
+                                                    );
+
+                                            }
+
+                                        }
+
+
+                                        $logo =
+                                            null;
+
+
+                                        if (
+                                            str_contains(
+                                                $methodName,
+                                                'bca'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'bca.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'bri'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'bri.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'bni'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'bni.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'mandiri'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'mandiri.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'panin'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'panin.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'dana'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'dana.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'ovo'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'ovo.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'gopay'
+                                            ) ||
+                                            str_contains(
+                                                $methodName,
+                                                'go pay'
+                                            ) ||
+                                            str_contains(
+                                                $methodName,
+                                                'go-pay'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'gopay.png';
+
+                                        } elseif (
+                                            str_contains(
+                                                $methodName,
+                                                'shopeepay'
+                                            ) ||
+                                            str_contains(
+                                                $methodName,
+                                                'shopee pay'
+                                            ) ||
+                                            str_contains(
+                                                $methodName,
+                                                'shopee-pay'
+                                            )
+                                        ) {
+
+                                            $logo =
+                                                'shopeepay.png';
+
+                                        }
+
+
+                                        $detectedLogo =
+                                            null;
+
+
+                                        if (
+                                            $logo &&
+                                            file_exists(
+                                                public_path(
+                                                    'images/payment-methods/' .
+                                                    $logo
+                                                )
+                                            )
+                                        ) {
+
+                                            $detectedLogo =
+                                                asset(
+                                                    'images/payment-methods/' .
+                                                    $logo
+                                                );
+
+                                        }
+
+
+                                        $paymentImage =
+                                            $uploadedImage
+                                            ?: $detectedLogo;
+
+
+                                        // Di halaman checkout, deskripsi dibuat netral agar
+                                        // pembeli tidak langsung transfer. Instruksi & rekening
+                                        // lengkap hanya tampil di halaman Pembayaran.
+                                        $methodDescription =
+                                            $method->type === 'bank_transfer'
+                                                ? 'Detail rekening & instruksi transfer ditampilkan di halaman pembayaran setelah pesanan dibuat.'
+                                                : 'Detail pembayaran e-wallet ditampilkan di halaman pembayaran setelah pesanan dibuat.';
+
+                                    @endphp
+
+
+
+                                    {{-- PAYMENT CARD --}}
+
+                                    <label
+                                        class="payment-method-card zalina-payment-card group relative flex items-center gap-4 border border-[#eadcdf] bg-white p-4 md:p-5 cursor-pointer transition-all duration-300 hover:border-[#631f2b] hover:-translate-y-0.5 hover:shadow-[0_14px_35px_rgba(72,31,45,0.08)]"
+                                    >
+
+
+                                        {{-- RADIO --}}
+
+                                        <input
+                                            type="radio"
+                                            name="payment_method_id"
+                                            value="{{ $method->id }}"
+                                            required
+                                            @checked(old('payment_method_id') == $method->id)
+                                            class="payment-radio zalina-radio w-5 h-5 shrink-0 border-[#d8c1c7] text-[#631f2b] focus:ring-[#631f2b]"
+                                        >
+
+
+
+                                        {{-- LOGO --}}
+
+                                        <div
+                                            class="payment-logo-box w-24 h-20 sm:w-28 sm:h-24 shrink-0 border border-[#eadcdf] bg-[#f7eef0] rounded-2xl flex items-center justify-center overflow-hidden"
+                                        >
+
+                                            @if ($paymentImage)
+
+                                                <img
+                                                    src="{{ $paymentImage }}"
+                                                    alt="{{ $method->name }}"
+                                                    class="max-w-full max-h-full object-contain p-3"
+                                                    loading="lazy"
+                                                    onerror="
+                                                        this.style.display='none';
+
+                                                        const fallback =
+                                                            this.parentElement.querySelector('.payment-fallback');
+
+                                                        if (fallback) {
+                                                            fallback.classList.remove('hidden');
+                                                        }
+                                                    "
+                                                >
+
+
+                                                <div
+                                                    class="payment-fallback hidden px-2 text-center"
+                                                >
+
+                                                    <div class="text-xs font-bold uppercase tracking-wide text-[#631f2b]">
+                                                        {{ $method->name }}
+                                                    </div>
+
+                                                </div>
+
+                                            @else
+
+                                                <div class="px-2 text-center">
+
+                                                    <div class="text-xs font-bold uppercase tracking-wide text-[#631f2b]">
+                                                        {{ $method->name }}
+                                                    </div>
+
+                                                </div>
+
+                                            @endif
+
+                                        </div>
+
+
+
+                                        {{-- PAYMENT INFO --}}
+
+                                        <div class="flex-1 min-w-0">
+
+                                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+
+                                                <div>
+
+                                                    <div class="font-bold text-gray-900">
+                                                        {{ $method->name }}
+                                                    </div>
+
+
+                                                    <div class="text-xs font-medium uppercase tracking-wider text-gray-400 mt-1">
+
+                                                        {{ $method->type === 'bank_transfer'
+                                                            ? 'Bank Transfer'
+                                                            : 'E-Wallet'
+                                                        }}
+
+                                                    </div>
+
+                                                </div>
+
+
+                                                <div class="hidden sm:block text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+                                                    Tersedia
+                                                </div>
+
+                                            </div>
+
+
+                                            @if ($methodDescription)
+
+                                                <p class="text-sm text-gray-500 mt-2 leading-relaxed">
+                                                    {{ $methodDescription }}
+                                                </p>
+
+                                            @endif
+
+
+                                            {{--
+                                                GANTI: sebelumnya pill "🔒 Nomor rekening
+                                                tampil di langkah pembayaran" — cuma teks
+                                                pasif, tidak actionable. Diganti disclosure
+                                                "Syarat & Ketentuan Pemesanan" yang bisa
+                                                dibuka pembeli untuk baca detail sebelum
+                                                pilih metode. Pakai <details> native (bukan
+                                                Alpine) supaya tidak bergantung pada library
+                                                JS yang belum tentu dimuat di layout toko.
+                                                Edit isi <li> di bawah sesuai kebijakan toko.
+                                            --}}
+                                            <details class="mt-3 group/terms">
+                                                <summary class="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-[#fbf3f5] px-3 py-1 text-xs font-semibold text-[#7c2d3a] transition hover:bg-[#f5e6ea]">
+                                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h6l5 5v11a2 2 0 01-2 2z"/>
+                                                    </svg>
+                                                    Syarat &amp; Ketentuan Pemesanan
+                                                    <svg class="h-3 w-3 shrink-0 transition group-open/terms:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                    </svg>
+                                                </summary>
+
+                                                <ul class="mt-2 list-disc space-y-1 rounded-2xl border border-[#eadcdf] bg-[#fbf6f1] p-4 pl-8 text-xs leading-relaxed text-[#7c2d3a]">
+                                                    <li>Nomor rekening/akun pembayaran ditampilkan di halaman pembayaran setelah pesanan dibuat.</li>
+                                                    <li>Pesanan diproses setelah pembayaran terverifikasi oleh admin Zalina.</li>
+                                                    <li>Pastikan nominal transfer sesuai tagihan agar proses verifikasi lebih cepat.</li>
+                                                </ul>
+                                            </details>
+
+                                        </div>
+
+
+
+                                        {{-- SELECT INDICATOR --}}
+
+                                        <div class="payment-selected-indicator hidden absolute right-4 top-4 w-6 h-6 rounded-full bg-[#631f2b] text-white items-center justify-center text-xs font-bold">
+                                            ✓
+                                        </div>
+
+
+                                    </label>
+
+
+                                @empty
+
+
+                                    <div class="border border-yellow-200 bg-yellow-50 p-5 text-yellow-700 zalina-soft-box">
+
+                                        <div class="font-semibold">
+                                            Metode pembayaran belum tersedia
+                                        </div>
+
+
+                                        <div class="text-sm mt-1">
+                                            Silakan tambahkan metode pembayaran melalui halaman admin.
+                                        </div>
+
+                                    </div>
+
+
+                                @endforelse
+
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+
+                    {{-- ========================================================= --}}
+                    {{-- PROMO --}}
+                    {{-- ========================================================= --}}
+
+                    <section class="zalina-card">
+
+
+                        <div class="zalina-card-head px-5 py-6 md:px-8 md:py-7">
+
+                            <h2 class="zalina-display text-xl md:text-2xl font-semibold text-[#481f2d]">
+                                Kode Promo
+                            </h2>
+
+
+                            <p class="text-sm text-gray-500 mt-1">
+                                Masukkan kode promo jika tersedia.
+                            </p>
+
+                        </div>
+
+
+                        <div class="p-5 md:p-7">
+
+                            <input
+                                type="text"
+                                name="promo_code"
+                                value="{{ old('promo_code') }}"
+                                placeholder="Masukkan kode promo"
+                                class="w-full zalina-input px-4 py-3 text-sm uppercase tracking-wide text-gray-800 placeholder:text-gray-400"
+                            >
+
+                        </div>
+
+                    </section>
+
+
+                </div>
+
+
+
+                {{-- ========================================================= --}}
+                {{-- ORDER SUMMARY --}}
+                {{-- ========================================================= --}}
+
+                <aside class="lg:col-span-1">
+
+                    <div class="lg:sticky lg:top-6 zalina-card">
+
+
+                        {{-- HEADER --}}
+
+                        <div class="zalina-card-head px-5 py-6 md:px-7">
+
+                            <h2 class="zalina-display text-2xl font-semibold text-[#481f2d]">
+                                Ringkasan Pesanan
+                            </h2>
+
+                        </div>
+
+
+
+                        {{-- PRODUCTS --}}
+
+                        <div class="p-5 md:p-6">
+
+                            <div class="space-y-5">
+
+
+                                @foreach ($cartItems as $item)
+
+
+                                    @php
+
+                                        $price =
+                                            $item->variant?->price
+                                            ?: $item->product?->current_price
+                                            ?: 0;
+
+                                        $itemTotal =
+                                            $price *
+                                            (int) $item->quantity;
+
+                                    @endphp
+
+
+
+                                    <div class="flex gap-4">
+
+
+                                        {{-- PRODUCT IMAGE --}}
+
+                                        <div class="w-16 h-20 border border-[#eadcdf] bg-[#f7eef0] overflow-hidden shrink-0 rounded-xl">
+
+                                            @if ($item->product?->image)
+
+                                                <img
+                                                    src="{{ asset('storage/' . $item->product->image) }}"
+                                                    alt="{{ $item->product?->name }}"
+                                                    class="w-full h-full object-cover"
+                                                >
+
+                                            @else
+
+                                                <div class="w-full h-full flex items-center justify-center text-xs font-semibold text-gray-400">
+                                                    Zalina
+                                                </div>
+
+                                            @endif
+
+                                        </div>
+
+
+
+                                        {{-- PRODUCT INFO --}}
+
+                                        <div class="flex-1 min-w-0">
+
+                                            <div class="font-semibold text-gray-800 text-sm leading-5">
+                                                {{ $item->product?->name }}
+                                            </div>
+
+
+                                            @if ($item->variant)
+
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    {{ $item->variant->name }}
+                                                </div>
+
+                                            @endif
+
+
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Qty: {{ $item->quantity }}
+                                            </div>
+
+
+                                            <div class="font-bold text-[#631f2b] mt-2">
+                                                Rp {{ number_format($itemTotal, 0, ',', '.') }}
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                @endforeach
+
+
+                            </div>
+
+
+
+                            {{-- SUMMARY --}}
+
+                            <div class="border-t border-gray-100 mt-6 pt-6 space-y-4 text-sm">
+
+
+                                <div class="flex justify-between gap-4">
+
+                                    <span class="text-gray-500">
+                                        Subtotal
+                                    </span>
+
+
+                                    <span class="font-semibold text-gray-800 text-right">
+                                        Rp {{ number_format($subtotal, 0, ',', '.') }}
+                                    </span>
+
+                                </div>
+
+
+
+                                <div class="flex justify-between gap-4">
+
+                                    <span class="text-gray-500">
+                                        Ongkos Kirim
+                                    </span>
+
+
+                                    <span
+                                        id="shippingSummary"
+                                        class="font-semibold text-right {{ $isFreeShipping ? 'text-emerald-600' : 'text-gray-800' }}"
+                                    >
+                                        {{ $isFreeShipping ? 'GRATIS ONGKIR' : 'Belum dipilih' }}
+                                    </span>
+
+                                </div>
+
+
+
+                                <div class="flex justify-between gap-4">
+
+                                    <span class="text-gray-500">
+                                        Biaya Admin
+                                    </span>
+
+
+                                    <span class="font-semibold text-gray-800 text-right">
+                                        {{ $adminFee > 0 ? 'Rp '.number_format($adminFee, 0, ',', '.') : 'Gratis' }}
+                                    </span>
+
+                                </div>
+
+
+
+                                <div class="flex justify-between gap-4">
+
+                                    <span class="text-gray-500">
+                                        Promo
+                                    </span>
+
+
+                                    <span class="font-semibold text-gray-700 text-right">
+                                        Dihitung saat pesanan dibuat
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- TOTAL --}}
+
+                            <div class="zalina-summary-total mt-6 p-5">
+
+                                <div class="flex justify-between items-center gap-4">
+
+                                    <span class="zalina-display text-lg font-semibold text-white/90">
+                                        Perkiraan Total
+                                    </span>
+
+
+                                    <span
+                                        id="grandTotalPreview"
+                                        class="text-xl font-bold text-white text-right"
+                                    >
+                                        Rp {{ number_format($subtotal - ($discountTotal ?? 0) + ($shipping ?? 0) + $adminFee, 0, ',', '.') }}
+                                    </span>
+
+                                </div>
+
+                                <p class="mt-3 text-[11px] leading-relaxed text-white/70">
+                                    Angka ini hanya perkiraan dan belum final. Total yang harus
+                                    ditransfer dipastikan di halaman Pembayaran setelah pesanan dibuat.
+                                </p>
+
+                            </div>
+
+
+
+                            {{-- SUBMIT --}}
+
+                            <button
+                                type="submit"
+                                id="submitCheckout"
+                                class="zalina-btn-primary w-full mt-4 text-white font-bold py-4 px-5 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Buat Pesanan
+                            </button>
+
+                            <p class="mt-3 text-center text-xs leading-relaxed text-gray-500">
+                                Kamu <span class="font-semibold text-gray-700">belum dikenakan pembayaran</span>.
+                                Setelah ini kamu akan diarahkan ke halaman pembayaran.
+                            </p>
+
+
+
+                            {{-- BACK --}}
+
+                            <a
+                                href="{{ route('cart.index') }}"
+                                class="block text-center mt-4 text-sm text-gray-500 hover:text-[#631f2b] transition"
+                            >
+                                ← Kembali ke Keranjang
+                            </a>
+
+
+                        </div>
+
+                    </div>
+
+                </aside>
+
+
+            </div>
+
+        </form>
+
+
+    </div>
+
+</div>
+
+
+
+{{-- ========================================================= --}}
+{{-- JAVASCRIPT --}}
+{{-- ========================================================= --}}
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ELEMENTS
+    |--------------------------------------------------------------------------
+    */
+
+    const destinationSearch =
+        document.getElementById('destinationSearch');
+
+    const destinationResults =
+        document.getElementById('destinationResults');
+
+    const destinationLoading =
+        document.getElementById('destinationLoading');
+
+    const destinationId =
+        document.getElementById('destinationId');
+
+    const destinationName =
+        document.getElementById('destinationName');
+
+    const selectedDestination =
+        document.getElementById('selectedDestination');
+
+    const selectedDestinationText =
+        document.getElementById('selectedDestinationText');
+
+    const destinationSearchStatus =
+        document.getElementById(
+            'destinationSearchStatus'
+        );
+
+
+    const shippingProvince =
+        document.getElementById(
+            'shippingProvince'
+        );
+
+    const shippingCity =
+        document.getElementById(
+            'shippingCity'
+        );
+
+    const shippingDistrict =
+        document.getElementById(
+            'shippingDistrict'
+        );
+
+    const shippingSubdistrict =
+        document.getElementById(
+            'shippingSubdistrict'
+        );
+
+    const shippingPostalCode =
+        document.getElementById(
+            'shippingPostalCode'
+        );
+
+    const shippingAddress =
+        document.getElementById(
+            'shippingAddress'
+        );
+
+
+    const cityHint =
+        document.getElementById(
+            'cityHint'
+        );
+
+    const districtHint =
+        document.getElementById(
+            'districtHint'
+        );
+
+    const subdistrictHint =
+        document.getElementById(
+            'subdistrictHint'
+        );
+
+    const postalCodeHint =
+        document.getElementById(
+            'postalCodeHint'
+        );
+
+    const addressDetailHint =
+        document.getElementById(
+            'addressDetailHint'
+        );
+
+
+    const addressProgressIcon =
+        document.getElementById(
+            'addressProgressIcon'
+        );
+
+    const addressProgressTitle =
+        document.getElementById(
+            'addressProgressTitle'
+        );
+
+    const addressProgressText =
+        document.getElementById(
+            'addressProgressText'
+        );
+
+    const addressComplete =
+        document.getElementById(
+            'addressComplete'
+        );
+
+
+    const shippingWeight =
+        document.getElementById(
+            'shippingWeight'
+        );
+
+    const shippingOptions =
+        document.getElementById(
+            'shippingOptions'
+        );
+
+    const shippingLoading =
+        document.getElementById(
+            'shippingLoading'
+        );
+
+    const shippingError =
+        document.getElementById(
+            'shippingError'
+        );
+
+    const shippingEmpty =
+        document.getElementById(
+            'shippingEmpty'
+        );
+
+    const shippingAddressLock =
+        document.getElementById(
+            'shippingAddressLock'
+        );
+
+    const shippingCourier =
+        document.getElementById(
+            'shippingCourier'
+        );
+
+    const shippingService =
+        document.getElementById(
+            'shippingService'
+        );
+
+    const shippingEtd =
+        document.getElementById(
+            'shippingEtd'
+        );
+
+    const shippingCost =
+        document.getElementById(
+            'shippingCost'
+        );
+
+    const shippingSummary =
+        document.getElementById(
+            'shippingSummary'
+        );
+
+    const grandTotalPreview =
+        document.getElementById(
+            'grandTotalPreview'
+        );
+
+    const shippingStatus =
+        document.getElementById(
+            'shippingStatus'
+        );
+
+    const checkoutForm =
+        document.getElementById(
+            'checkoutForm'
+        );
+
+    const submitCheckout =
+        document.getElementById(
+            'submitCheckout'
+        );
+
+
+    const subtotal =
+        Number({{ $subtotal }});
+
+
+    // Gratis ongkir (aturan sama dengan server): biaya kurir tidak dibayar
+    // pembeli, jadi tidak boleh masuk ke estimasi total.
+    const isFreeShipping =
+        @json((bool) $isFreeShipping);
+
+
+    // Biaya admin dari Setting (sama dengan yang ditagih server).
+    const adminFee =
+        Number({{ (float) $adminFee }});
+
+
+    let searchTimer =
+        null;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHIPPING REQUEST TOKEN
+    |--------------------------------------------------------------------------
+    |
+    | Mencegah race condition: jika calculateShipping() terpanggil lagi
+    | sebelum request sebelumnya selesai, hasil request lama akan
+    | diabaikan sehingga daftar opsi pengiriman tidak terduplikasi.
+    |
+    */
+
+    let shippingRequestToken =
+        0;
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CURRENT SELECTED DESTINATION DATA
+    |--------------------------------------------------------------------------
+    */
+
+    let selectedDestinationData =
+        null;
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FORMAT RUPIAH
+    |--------------------------------------------------------------------------
+    */
+
+    function formatRupiah(value) {
+
+        return new Intl.NumberFormat(
+            'id-ID',
+            {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }
+        ).format(
+            Number(value || 0)
+        );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESCAPE HTML
+    |--------------------------------------------------------------------------
+    */
+
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement(
+                'div'
+            );
+
+        div.textContent =
+            value ?? '';
+
+        return div.innerHTML;
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NORMALIZE TEXT
+    |--------------------------------------------------------------------------
+    */
+
+    function normalizeText(value) {
+
+        return String(
+            value ?? ''
+        )
+            .trim()
+            .replace(
+                /\s+/g,
+                ' '
+            );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE TOTAL
+    |--------------------------------------------------------------------------
+    */
+
+    function updateTotal() {
+
+        const cost =
+            isFreeShipping
+                ? 0
+                : Number(
+                    shippingCost.value || 0
+                );
+
+        const total =
+            subtotal + cost + adminFee;
+
+        grandTotalPreview.textContent =
+            formatRupiah(
+                total
+            );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT CARD STATE
+    |--------------------------------------------------------------------------
+    */
+
+    function updatePaymentCards() {
+
+        const cards =
+            document.querySelectorAll(
+                '.payment-method-card'
+            );
+
+
+        cards.forEach(
+            function (card) {
+
+                const radio =
+                    card.querySelector(
+                        '.payment-radio'
+                    );
+
+
+                const indicator =
+                    card.querySelector(
+                        '.payment-selected-indicator'
+                    );
+
+
+                if (!radio) {
+                    return;
+                }
+
+
+                if (radio.checked) {
+
+                    card.classList.add(
+                        'border-[#631f2b]',
+                        'bg-[#fbf2f4]',
+                        'shadow-sm'
+                    );
+
+                    card.classList.remove(
+                        'border-[#eadcdf]'
+                    );
+
+
+                    if (indicator) {
+
+                        indicator.classList.remove(
+                            'hidden'
+                        );
+
+                        indicator.classList.add(
+                            'flex'
+                        );
+
+                    }
+
+                } else {
+
+                    card.classList.remove(
+                        'border-[#631f2b]',
+                        'bg-[#fbf2f4]',
+                        'shadow-sm'
+                    );
+
+                    card.classList.add(
+                        'border-[#eadcdf]'
+                    );
+
+
+                    if (indicator) {
+
+                        indicator.classList.add(
+                            'hidden'
+                        );
+
+                        indicator.classList.remove(
+                            'flex'
+                        );
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT RADIO EVENTS
+    |--------------------------------------------------------------------------
+    */
+
+    document
+        .querySelectorAll(
+            '.payment-radio'
+        )
+        .forEach(
+            function (radio) {
+
+                radio.addEventListener(
+                    'change',
+                    updatePaymentCards
+                );
+
+            }
+        );
+
+
+    updatePaymentCards();
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADDRESS FIELD HELPERS
+    |--------------------------------------------------------------------------
+    */
+
+    function unlockField(
+        field,
+        placeholder
+    ) {
+
+        if (!field) {
+            return;
+        }
+
+
+        field.disabled =
+            false;
+
+
+        field.classList.remove(
+            'bg-gray-100',
+            'text-gray-400',
+            'cursor-not-allowed'
+        );
+
+
+        field.classList.add(
+            'bg-white',
+            'text-gray-800'
+        );
+
+
+        if (placeholder) {
+
+            field.placeholder =
+                placeholder;
+
+        }
+
+    }
+
+
+
+    function lockField(
+        field,
+        placeholder
+    ) {
+
+        if (!field) {
+            return;
+        }
+
+
+        field.disabled =
+            true;
+
+
+        field.classList.add(
+            'bg-gray-100',
+            'text-gray-400',
+            'cursor-not-allowed'
+        );
+
+
+        field.classList.remove(
+            'bg-white',
+            'text-gray-800'
+        );
+
+
+        if (placeholder) {
+
+            field.placeholder =
+                placeholder;
+
+        }
+
+    }
+
+
+
+    function clearField(
+        field
+    ) {
+
+        if (!field) {
+            return;
+        }
+
+
+        field.value =
+            '';
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADDRESS PROGRESS
+    |--------------------------------------------------------------------------
+    */
+
+    function updateAddressProgress() {
+
+        const province =
+            normalizeText(
+                shippingProvince.value
+            );
+
+        const city =
+            normalizeText(
+                shippingCity.value
+            );
+
+        const district =
+            normalizeText(
+                shippingDistrict.value
+            );
+
+        const subdistrict =
+            normalizeText(
+                shippingSubdistrict.value
+            );
+
+        const postalCode =
+            normalizeText(
+                shippingPostalCode.value
+            );
+
+        const address =
+            normalizeText(
+                shippingAddress.value
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PROVINCE
+        |--------------------------------------------------------------------------
+        */
+
+        if (!province) {
+
+            addressProgressIcon.textContent =
+                '1';
+
+            addressProgressTitle.textContent =
+                'Isi Provinsi terlebih dahulu';
+
+            addressProgressText.textContent =
+                'Setelah provinsi lengkap, Kabupaten/Kota akan dapat diisi.';
+
+            lockField(
+                shippingCity,
+                'Isi setelah Provinsi lengkap'
+            );
+
+            lockField(
+                shippingDistrict,
+                'Isi setelah Kabupaten/Kota lengkap'
+            );
+
+            lockField(
+                shippingSubdistrict,
+                'Isi setelah Kecamatan lengkap'
+            );
+
+            lockField(
+                shippingPostalCode,
+                'Isi setelah Kelurahan/Desa lengkap'
+            );
+
+            lockField(
+                shippingAddress,
+                'Isi setelah seluruh wilayah lengkap'
+            );
+
+            return false;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CITY
+        |--------------------------------------------------------------------------
+        */
+
+        unlockField(
+            shippingCity,
+            'Masukkan Kabupaten / Kota'
+        );
+
+
+        if (!city) {
+
+            addressProgressIcon.textContent =
+                '2';
+
+            addressProgressTitle.textContent =
+                'Lengkapi Kabupaten / Kota';
+
+            addressProgressText.textContent =
+                'Provinsi sudah lengkap. Sekarang isi Kabupaten/Kota.';
+
+            lockField(
+                shippingDistrict,
+                'Isi setelah Kabupaten/Kota lengkap'
+            );
+
+            lockField(
+                shippingSubdistrict,
+                'Isi setelah Kecamatan lengkap'
+            );
+
+            lockField(
+                shippingPostalCode,
+                'Isi setelah Kelurahan/Desa lengkap'
+            );
+
+            lockField(
+                shippingAddress,
+                'Isi setelah seluruh wilayah lengkap'
+            );
+
+            return false;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DISTRICT
+        |--------------------------------------------------------------------------
+        */
+
+        unlockField(
+            shippingDistrict,
+            'Masukkan Kecamatan'
+        );
+
+
+        if (!district) {
+
+            addressProgressIcon.textContent =
+                '3';
+
+            addressProgressTitle.textContent =
+                'Lengkapi Kecamatan';
+
+            addressProgressText.textContent =
+                'Kabupaten/Kota sudah lengkap. Lanjutkan dengan Kecamatan.';
+
+            lockField(
+                shippingSubdistrict,
+                'Isi setelah Kecamatan lengkap'
+            );
+
+            lockField(
+                shippingPostalCode,
+                'Isi setelah Kelurahan/Desa lengkap'
+            );
+
+            lockField(
+                shippingAddress,
+                'Isi setelah seluruh wilayah lengkap'
+            );
+
+            return false;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SUBDISTRICT
+        |--------------------------------------------------------------------------
+        */
+
+        unlockField(
+            shippingSubdistrict,
+            'Masukkan Kelurahan / Desa'
+        );
+
+
+        if (!subdistrict) {
+
+            addressProgressIcon.textContent =
+                '4';
+
+            addressProgressTitle.textContent =
+                'Lengkapi Kelurahan / Desa';
+
+            addressProgressText.textContent =
+                'Kecamatan sudah lengkap. Lanjutkan dengan Kelurahan/Desa.';
+
+            lockField(
+                shippingPostalCode,
+                'Isi setelah Kelurahan/Desa lengkap'
+            );
+
+            lockField(
+                shippingAddress,
+                'Isi setelah seluruh wilayah lengkap'
+            );
+
+            return false;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | POSTAL CODE
+        |--------------------------------------------------------------------------
+        */
+
+        unlockField(
+            shippingPostalCode,
+            'Masukkan kode pos'
+        );
+
+
+        if (!postalCode) {
+
+            addressProgressIcon.textContent =
+                '5';
+
+            addressProgressTitle.textContent =
+                'Lengkapi Kode Pos';
+
+            addressProgressText.textContent =
+                'Kelurahan/Desa sudah lengkap. Masukkan kode pos.';
+
+            lockField(
+                shippingAddress,
+                'Isi setelah kode pos lengkap'
+            );
+
+            return false;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DETAIL ADDRESS
+        |--------------------------------------------------------------------------
+        */
+
+        unlockField(
+            shippingAddress,
+            'Nama jalan, nomor rumah, RT/RW, perumahan, patokan...'
+        );
+
+
+        if (!address) {
+
+            addressProgressIcon.textContent =
+                '6';
+
+            addressProgressTitle.textContent =
+                'Lengkapi Detail Alamat';
+
+            addressProgressText.textContent =
+                'Tuliskan alamat jalan, nomor rumah, RT/RW, perumahan, dan patokan.';
+
+            return false;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMPLETE
+        |--------------------------------------------------------------------------
+        */
+
+        addressProgressIcon.textContent =
+            '✓';
+
+        addressProgressTitle.textContent =
+            'Alamat pengiriman lengkap';
+
+        addressProgressText.textContent =
+            'Semua bagian alamat sudah terisi. Layanan pengiriman dapat dihitung.';
+
+
+        addressComplete.classList.remove(
+            'hidden'
+        );
+
+
+        return true;
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADDRESS COMPLETE CHECK
+    |--------------------------------------------------------------------------
+    */
+
+    function isAddressComplete() {
+
+        return Boolean(
+            normalizeText(
+                shippingProvince.value
+            ) &&
+            normalizeText(
+                shippingCity.value
+            ) &&
+            normalizeText(
+                shippingDistrict.value
+            ) &&
+            normalizeText(
+                shippingSubdistrict.value
+            ) &&
+            normalizeText(
+                shippingPostalCode.value
+            ) &&
+            normalizeText(
+                shippingAddress.value
+            )
+        );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESET SHIPPING
+    |--------------------------------------------------------------------------
+    */
+
+    function resetShipping() {
+
+        shippingOptions.innerHTML =
+            '';
+
+        shippingCourier.value =
+            '';
+
+        shippingService.value =
+            '';
+
+        shippingEtd.value =
+            '';
+
+        shippingCost.value =
+            '';
+
+        shippingSummary.textContent =
+            isFreeShipping
+                ? 'GRATIS ONGKIR'
+                : 'Belum dipilih';
+
+        shippingStatus.textContent =
+            'Lengkapi alamat terlebih dahulu';
+
+        shippingError.classList.add(
+            'hidden'
+        );
+
+        shippingEmpty.classList.add(
+            'hidden'
+        );
+
+        shippingAddressLock.classList.remove(
+            'hidden'
+        );
+
+        updateTotal();
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE SHIPPING AVAILABILITY
+    |--------------------------------------------------------------------------
+    */
+
+    function updateShippingAvailability() {
+
+        if (
+            isAddressComplete() &&
+            destinationId.value
+        ) {
+
+            shippingAddressLock.classList.add(
+                'hidden'
+            );
+
+            return true;
+
+        }
+
+
+        shippingAddressLock.classList.remove(
+            'hidden'
+        );
+
+        return false;
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAFE JSON RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    async function safeJsonResponse(
+        response
+    ) {
+
+        const responseText =
+            await response.text();
+
+
+        try {
+
+            return JSON.parse(
+                responseText
+            );
+
+        } catch (error) {
+
+            console.error(
+                'SERVER RESPONSE BUKAN JSON:',
+                responseText
+            );
+
+
+            throw new Error(
+                'Server mengembalikan response yang bukan JSON. Periksa endpoint shipping dan Laravel log.'
+            );
+
+        }
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | APPLY DESTINATION DATA
+    |--------------------------------------------------------------------------
+    */
+
+    function applyDestinationData(
+        destination
+    ) {
+
+        selectedDestinationData =
+            destination;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DESTINATION ID
+        |--------------------------------------------------------------------------
+        */
+
+        destinationId.value =
+            destination.id ??
+            '';
+
+
+        destinationName.value =
+            destination.label ??
+            '';
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PROVINCE
+        |--------------------------------------------------------------------------
+        */
+
+        const province =
+            destination.province_name ||
+            destination.province ||
+            destination.province_name_id ||
+            '';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CITY
+        |--------------------------------------------------------------------------
+        */
+
+        const city =
+            destination.city_name ||
+            destination.city ||
+            destination.regency_name ||
+            destination.city_name_id ||
+            '';
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DISTRICT
+        |--------------------------------------------------------------------------
+        */
+
+        const district =
+            destination.district_name ||
+            destination.district ||
+            '';
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SUBDISTRICT
+        |--------------------------------------------------------------------------
+        */
+
+        const subdistrict =
+            destination.subdistrict_name ||
+            destination.subdistrict ||
+            '';
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | POSTAL CODE
+        |--------------------------------------------------------------------------
+        */
+
+        const postalCode =
+            destination.zip_code ||
+            destination.postal_code ||
+            destination.postcode ||
+            '';
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SET VALUES
+        |--------------------------------------------------------------------------
+        */
+
+        if (province) {
+
+            shippingProvince.value =
+                province;
+
+        }
+
+
+        if (city) {
+
+            shippingCity.value =
+                city;
+
+        }
+
+
+        if (district) {
+
+            shippingDistrict.value =
+                district;
+
+        }
+
+
+        if (subdistrict) {
+
+            shippingSubdistrict.value =
+                subdistrict;
+
+        }
+
+
+        if (postalCode) {
+
+            shippingPostalCode.value =
+                postalCode;
+
+        }
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SELECTED BOX
+        |--------------------------------------------------------------------------
+        */
+
+        selectedDestinationText.textContent =
+            destination.label ||
+            [
+                province,
+                city,
+                district,
+                subdistrict
+            ]
+                .filter(Boolean)
+                .join(' · ');
+
+
+        selectedDestination.classList.remove(
+            'hidden'
+        );
+
+
+        destinationSearchStatus.textContent =
+            'Wilayah dipilih';
+
+
+        destinationSearchStatus.classList.remove(
+            'text-gray-400'
+        );
+
+        destinationSearchStatus.classList.add(
+            'text-green-600'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADDRESS PROGRESS
+        |--------------------------------------------------------------------------
+        */
+
+        updateAddressProgress();
+
+
+        updateShippingAvailability();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SHIPPING
+        |--------------------------------------------------------------------------
+        */
+
+        resetShipping();
+
+
+        if (
+            isAddressComplete()
+        ) {
+
+            shippingAddressLock.classList.add(
+                'hidden'
+            );
+
+            calculateShipping();
+
+        }
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH DESTINATION
+    |--------------------------------------------------------------------------
+    */
+
+    async function searchDestination(
+        keyword
+    ) {
+
+        destinationResults.innerHTML =
+            '';
+
+        destinationResults.classList.add(
+            'hidden'
+        );
+
+
+        if (
+            keyword.length < 3
+        ) {
+
+            return;
+
+        }
+
+
+        destinationLoading.classList.remove(
+            'hidden'
+        );
+
+
+        try {
+
+            const url =
+                '{{ route('shipping.destinations') }}' +
+                '?search=' +
+                encodeURIComponent(
+                    keyword
+                );
+
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: 'GET',
+
+                        headers: {
+                            'Accept':
+                                'application/json',
+
+                            'X-Requested-With':
+                                'XMLHttpRequest'
+                        }
+                    }
+                );
+
+
+            const result =
+                await safeJsonResponse(
+                    response
+                );
+
+
+            if (
+                !response.ok ||
+                !result.success
+            ) {
+
+                throw new Error(
+                    result.message ||
+                    'Gagal mencari wilayah tujuan.'
+                );
+
+            }
+
+
+            const destinations =
+                result.data ||
+                [];
+
+
+            if (
+                destinations.length === 0
+            ) {
+
+                destinationResults.innerHTML =
+                    '<div class="p-4 text-sm text-gray-500">' +
+                    'Wilayah tidak ditemukan.' +
+                    '</div>';
+
+
+                destinationResults.classList.remove(
+                    'hidden'
+                );
+
+                return;
+
+            }
+
+
+
+            destinations.forEach(
+                function (
+                    destination
+                ) {
+
+
+                    const button =
+                        document.createElement(
+                            'button'
+                        );
+
+
+                    button.type =
+                        'button';
+
+
+                    button.className =
+                        'w-full text-left px-4 py-4 border-b border-[#f0e5e8] ' +
+                        'hover:bg-[#fbf2f4] transition last:border-b-0 first:rounded-t-2xl last:rounded-b-2xl';
+
+
+                    const province =
+                        destination.province_name ||
+                        destination.province ||
+                        '';
+
+
+                    const city =
+                        destination.city_name ||
+                        destination.city ||
+                        '';
+
+
+                    const district =
+                        destination.district_name ||
+                        destination.district ||
+                        '';
+
+
+                    const subdistrict =
+                        destination.subdistrict_name ||
+                        destination.subdistrict ||
+                        '';
+
+
+                    button.innerHTML =
+
+                        '<div class="font-semibold text-gray-800 text-sm">' +
+
+                        escapeHtml(
+                            destination.label
+                        ) +
+
+                        '</div>' +
+
+                        '<div class="text-xs text-gray-500 mt-1">' +
+
+                        escapeHtml(
+                            province
+                        ) +
+
+                        ' · ' +
+
+                        escapeHtml(
+                            city
+                        ) +
+
+                        ' · ' +
+
+                        escapeHtml(
+                            district
+                        ) +
+
+                        ' · ' +
+
+                        escapeHtml(
+                            subdistrict
+                        ) +
+
+                        '</div>';
+
+
+                    button.addEventListener(
+                        'click',
+                        function () {
+
+                            selectDestination(
+                                destination
+                            );
+
+                        }
+                    );
+
+
+                    destinationResults.appendChild(
+                        button
+                    );
+
+                }
+            );
+
+
+            destinationResults.classList.remove(
+                'hidden'
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+
+            destinationResults.innerHTML =
+                '<div class="p-4 text-sm text-red-600">' +
+                escapeHtml(
+                    error.message
+                ) +
+                '</div>';
+
+
+            destinationResults.classList.remove(
+                'hidden'
+            );
+
+
+        } finally {
+
+            destinationLoading.classList.add(
+                'hidden'
+            );
+
+        }
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SELECT DESTINATION
+    |--------------------------------------------------------------------------
+    */
+
+    function selectDestination(
+        destination
+    ) {
+
+        destinationSearch.value =
+            destination.label ||
+            '';
+
+
+        destinationResults.classList.add(
+            'hidden'
+        );
+
+
+        destinationResults.innerHTML =
+            '';
+
+
+        applyDestinationData(
+            destination
+        );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CALCULATE SHIPPING
+    |--------------------------------------------------------------------------
+    */
+
+    async function calculateShipping() {
+
+
+        const destination =
+            destinationId.value;
+
+
+        const weight =
+            shippingWeight.value;
+
+
+        if (
+            !destination ||
+            !weight ||
+            !isAddressComplete()
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST TOKEN
+        |--------------------------------------------------------------------------
+        |
+        | Setiap pemanggilan calculateShipping() mendapat token baru.
+        | Hanya request dengan token TERBARU yang boleh merender hasil,
+        | sehingga respons dari request lama yang telat datang tidak
+        | akan menduplikasi daftar opsi pengiriman.
+        |
+        */
+
+        shippingRequestToken += 1;
+
+        const currentRequestToken =
+            shippingRequestToken;
+
+
+        shippingLoading.classList.remove(
+            'hidden'
+        );
+
+
+        shippingError.classList.add(
+            'hidden'
+        );
+
+
+        shippingEmpty.classList.add(
+            'hidden'
+        );
+
+
+        shippingOptions.innerHTML =
+            '';
+
+
+        shippingStatus.textContent =
+            'Menghitung ongkir...';
+
+
+
+        try {
+
+
+            const csrfToken =
+
+                document
+                    .querySelector(
+                        'meta[name="csrf-token"]'
+                    )
+                    ?.getAttribute(
+                        'content'
+                    )
+
+                ||
+
+                '{{ csrf_token() }}';
+
+
+
+            const response =
+                await fetch(
+                    '{{ route('shipping.calculate') }}',
+                    {
+                        method: 'POST',
+
+                        headers: {
+
+                            'Content-Type':
+                                'application/json',
+
+                            'Accept':
+                                'application/json',
+
+                            'X-Requested-With':
+                                'XMLHttpRequest',
+
+                            'X-CSRF-TOKEN':
+                                csrfToken
+
+                        },
+
+
+                        body:
+                            JSON.stringify(
+                                {
+                                    destination_id:
+                                        Number(
+                                            destination
+                                        ),
+
+                                    weight:
+                                        Number(
+                                            weight
+                                        )
+                                }
+                            )
+                    }
+                );
+
+
+
+            const result =
+                await safeJsonResponse(
+                    response
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | STALE RESPONSE GUARD
+            |--------------------------------------------------------------------------
+            |
+            | Jika sudah ada pemanggilan calculateShipping() yang lebih baru
+            | sejak fetch ini dimulai, response ini basi (stale) dan harus
+            | diabaikan agar tidak menduplikasi / menimpa hasil yang lebih baru.
+            |
+            */
+
+            if (
+                currentRequestToken !==
+                    shippingRequestToken
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !response.ok ||
+                !result.success
+            ) {
+
+                throw new Error(
+                    result.message ||
+                    'Gagal menghitung ongkos kirim.'
+                );
+
+            }
+
+
+            const services =
+                result.data ||
+                [];
+
+
+            if (
+                services.length === 0
+            ) {
+
+                shippingEmpty.classList.remove(
+                    'hidden'
+                );
+
+
+                shippingStatus.textContent =
+                    'Layanan tidak tersedia';
+
+                return;
+
+            }
+
+
+            shippingStatus.textContent =
+                'Pilih layanan pengiriman';
+
+
+            shippingOptions.innerHTML =
+                '';
+
+
+
+            services.forEach(
+                function (
+                    service,
+                    index
+                ) {
+
+
+                    const courier =
+                        service.courier ||
+                        service.code ||
+                        'Courier';
+
+
+                    const serviceName =
+                        service.service ||
+                        service.service_name ||
+                        'Standard';
+
+
+                    const description =
+                        service.description ||
+                        '';
+
+
+                    const etd =
+                        service.etd ||
+                        '-';
+
+
+                    const cost =
+                        Number(
+                            service.cost ||
+                            service.price ||
+                            0
+                        );
+
+
+                    const optionId =
+                        'shipping_option_' +
+                        index;
+
+
+
+                    const wrapper =
+                        document.createElement(
+                            'label'
+                        );
+
+
+                    wrapper.htmlFor =
+                        optionId;
+
+
+                    wrapper.className =
+                        'shipping-option-card block cursor-pointer border border-[#eadcdf] bg-white rounded-2xl ' +
+                        'p-4 md:p-5 transition duration-300 hover:border-[#631f2b] hover:bg-[#fbf2f4] hover:-translate-y-0.5';
+
+
+
+                    wrapper.innerHTML =
+
+                        '<div class="flex items-start gap-3 md:gap-4">' +
+
+                        '<input ' +
+
+                        'id="' +
+                        optionId +
+                        '" ' +
+
+                        'type="radio" ' +
+
+                        'name="shipping_option_radio" ' +
+
+                        'class="shipping-option-radio zalina-radio mt-1 w-5 h-5 shrink-0 text-[#631f2b] focus:ring-[#631f2b]">' +
+
+
+                        '<div class="flex-1 min-w-0">' +
+
+
+                        '<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">' +
+
+
+                        '<div>' +
+
+
+                        '<div class="font-bold text-gray-900">' +
+
+                        escapeHtml(
+                            String(
+                                courier
+                            ).toUpperCase()
+                        ) +
+
+                        ' - ' +
+
+                        escapeHtml(
+                            serviceName
+                        ) +
+
+                        '</div>' +
+
+
+                        (
+                            description
+
+                            ?
+
+                            '<div class="text-sm text-gray-500 mt-1">' +
+
+                            escapeHtml(
+                                description
+                            ) +
+
+                            '</div>'
+
+                            :
+
+                            ''
+                        ) +
+
+
+                        '<div class="text-xs text-gray-500 mt-2">' +
+
+                        'Estimasi pengiriman: ' +
+
+                        escapeHtml(
+                            String(
+                                etd
+                            )
+                        ) +
+
+                        '</div>' +
+
+
+                        '</div>' +
+
+
+                        (
+                            isFreeShipping
+
+                            ?
+
+                            '<div class="text-right whitespace-nowrap">' +
+                            '<div class="font-bold text-emerald-600">GRATIS</div>' +
+                            '<div class="text-xs text-gray-400 line-through">' +
+                            formatRupiah(cost) +
+                            '</div>' +
+                            '</div>'
+
+                            :
+
+                            '<div class="font-bold text-[#631f2b] whitespace-nowrap">' +
+                            formatRupiah(cost) +
+                            '</div>'
+                        ) +
+
+
+                        '</div>' +
+
+
+                        '</div>' +
+
+
+                        '</div>';
+
+
+
+                    const radio =
+                        wrapper.querySelector(
+                            'input'
+                        );
+
+
+
+                    radio.addEventListener(
+                        'change',
+                        function () {
+
+
+                            document
+                                .querySelectorAll(
+                                    '.shipping-option-card'
+                                )
+                                .forEach(
+                                    function (
+                                        card
+                                    ) {
+
+                                        card.classList.remove(
+                                            'border-[#631f2b]',
+                                            'bg-[#fbf2f4]',
+                                            'shadow-sm'
+                                        );
+
+
+                                        card.classList.add(
+                                            'border-[#eadcdf]'
+                                        );
+
+                                    }
+                                );
+
+
+                            wrapper.classList.remove(
+                                'border-[#eadcdf]'
+                            );
+
+
+                            wrapper.classList.add(
+                                'border-[#631f2b]',
+                                'bg-[#fbf2f4]',
+                                'shadow-sm'
+                            );
+
+
+                            shippingCourier.value =
+                                courier;
+
+
+                            shippingService.value =
+                                serviceName;
+
+
+                            shippingEtd.value =
+                                etd;
+
+
+                            shippingCost.value =
+                                isFreeShipping ? 0 : cost;
+
+
+                            shippingSummary.textContent =
+                                isFreeShipping
+                                    ? 'GRATIS ONGKIR'
+                                    : formatRupiah(
+                                        cost
+                                    );
+
+
+                            shippingStatus.textContent =
+                                String(
+                                    courier
+                                ).toUpperCase() +
+
+                                ' - ' +
+
+                                serviceName;
+
+
+                            updateTotal();
+
+                        }
+                    );
+
+
+
+                    shippingOptions.appendChild(
+                        wrapper
+                    );
+
+                }
+            );
+
+
+        } catch (error) {
+
+
+            console.error(
+                'SHIPPING ERROR:',
+                error
+            );
+
+
+            if (
+                currentRequestToken !==
+                    shippingRequestToken
+            ) {
+
+                return;
+
+            }
+
+
+            shippingError.textContent =
+                error.message ||
+                'Terjadi kesalahan saat menghitung ongkir.';
+
+
+            shippingError.classList.remove(
+                'hidden'
+            );
+
+
+            shippingStatus.textContent =
+                'Gagal menghitung ongkir';
+
+
+        } finally {
+
+
+            if (
+                currentRequestToken ===
+                    shippingRequestToken
+            ) {
+
+                shippingLoading.classList.add(
+                    'hidden'
+                );
+
+            }
+
+        }
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DESTINATION SEARCH EVENT
+    |--------------------------------------------------------------------------
+    */
+
+    destinationSearch.addEventListener(
+        'input',
+        function (event) {
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | MANUAL SEARCH INVALIDATES OLD DESTINATION
+            |--------------------------------------------------------------------------
+            */
+
+            destinationId.value =
+                '';
+
+            destinationName.value =
+                '';
+
+            selectedDestinationData =
+                null;
+
+
+            selectedDestination.classList.add(
+                'hidden'
+            );
+
+
+            destinationSearchStatus.textContent =
+                'Pilih hasil pencarian';
+
+
+            destinationSearchStatus.classList.remove(
+                'text-green-600'
+            );
+
+            destinationSearchStatus.classList.add(
+                'text-gray-400'
+            );
+
+
+            resetShipping();
+
+
+            const keyword =
+                event.target.value.trim();
+
+
+            clearTimeout(
+                searchTimer
+            );
+
+
+            if (
+                keyword.length < 3
+            ) {
+
+
+                destinationResults.innerHTML =
+                    '';
+
+
+                destinationResults.classList.add(
+                    'hidden'
+                );
+
+
+                return;
+
+            }
+
+
+            searchTimer =
+                setTimeout(
+                    function () {
+
+                        searchDestination(
+                            keyword
+                        );
+
+                    },
+                    500
+                );
+
+        }
+    );
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADDRESS FIELD EVENTS
+    |--------------------------------------------------------------------------
+    */
+
+    [
+        shippingProvince,
+        shippingCity,
+        shippingDistrict,
+        shippingSubdistrict,
+        shippingPostalCode,
+        shippingAddress
+    ]
+        .forEach(
+            function (field) {
+
+                field.addEventListener(
+                    'input',
+                    function () {
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | MANUAL ADDRESS EDIT
+                        |--------------------------------------------------------------------------
+                        |
+                        | Jika pengguna mengubah wilayah secara manual,
+                        | destination RajaOngkir tidak lagi dianggap valid.
+                        |
+                        */
+
+                        if (
+                            selectedDestinationData
+                        ) {
+
+                            const originalProvince =
+                                normalizeText(
+                                    selectedDestinationData.province_name ||
+                                    selectedDestinationData.province ||
+                                    ''
+                                );
+
+                            const originalCity =
+                                normalizeText(
+                                    selectedDestinationData.city_name ||
+                                    selectedDestinationData.city ||
+                                    ''
+                                );
+
+                            const originalDistrict =
+                                normalizeText(
+                                    selectedDestinationData.district_name ||
+                                    selectedDestinationData.district ||
+                                    ''
+                                );
+
+                            const originalSubdistrict =
+                                normalizeText(
+                                    selectedDestinationData.subdistrict_name ||
+                                    selectedDestinationData.subdistrict ||
+                                    ''
+                                );
+
+
+                            const currentProvince =
+                                normalizeText(
+                                    shippingProvince.value
+                                );
+
+                            const currentCity =
+                                normalizeText(
+                                    shippingCity.value
+                                );
+
+                            const currentDistrict =
+                                normalizeText(
+                                    shippingDistrict.value
+                                );
+
+                            const currentSubdistrict =
+                                normalizeText(
+                                    shippingSubdistrict.value
+                                );
+
+
+                            if (
+                                currentProvince !==
+                                    originalProvince ||
+
+                                currentCity !==
+                                    originalCity ||
+
+                                currentDistrict !==
+                                    originalDistrict ||
+
+                                currentSubdistrict !==
+                                    originalSubdistrict
+                            ) {
+
+                                destinationId.value =
+                                    '';
+
+                                destinationName.value =
+                                    '';
+
+                                selectedDestinationData =
+                                    null;
+
+                                selectedDestination.classList.add(
+                                    'hidden'
+                                );
+
+                                destinationSearchStatus.textContent =
+                                    'Pilih ulang wilayah RajaOngkir';
+
+                                destinationSearchStatus.classList.remove(
+                                    'text-green-600'
+                                );
+
+                                destinationSearchStatus.classList.add(
+                                    'text-amber-600'
+                                );
+
+                                resetShipping();
+
+                            }
+
+                        }
+
+
+                        updateAddressProgress();
+
+
+                        if (
+                            isAddressComplete() &&
+                            destinationId.value
+                        ) {
+
+                            shippingAddressLock.classList.add(
+                                'hidden'
+                            );
+
+                            calculateShipping();
+
+                        } else {
+
+                            shippingAddressLock.classList.remove(
+                                'hidden'
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | POSTAL CODE ONLY NUMBERS
+    |--------------------------------------------------------------------------
+    */
+
+    shippingPostalCode.addEventListener(
+        'input',
+        function () {
+
+            this.value =
+                this.value.replace(
+                    /\D/g,
+                    ''
+                );
+
+        }
+    );
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | HINT TEXTS
+    |--------------------------------------------------------------------------
+    */
+
+    shippingCity.addEventListener(
+        'input',
+        function () {
+
+            if (
+                normalizeText(
+                    this.value
+                )
+            ) {
+
+                cityHint.textContent =
+                    'Kabupaten/Kota sudah diisi.';
+
+                cityHint.classList.remove(
+                    'text-gray-400'
+                );
+
+                cityHint.classList.add(
+                    'text-green-600'
+                );
+
+            } else {
+
+                cityHint.textContent =
+                    'Lengkapi Kabupaten/Kota terlebih dahulu.';
+
+                cityHint.classList.remove(
+                    'text-green-600'
+                );
+
+                cityHint.classList.add(
+                    'text-gray-400'
+                );
+
+            }
+
+        }
+    );
+
+
+    shippingDistrict.addEventListener(
+        'input',
+        function () {
+
+            if (
+                normalizeText(
+                    this.value
+                )
+            ) {
+
+                districtHint.textContent =
+                    'Kecamatan sudah diisi.';
+
+                districtHint.classList.remove(
+                    'text-gray-400'
+                );
+
+                districtHint.classList.add(
+                    'text-green-600'
+                );
+
+            } else {
+
+                districtHint.textContent =
+                    'Lengkapi Kecamatan terlebih dahulu.';
+
+                districtHint.classList.remove(
+                    'text-green-600'
+                );
+
+                districtHint.classList.add(
+                    'text-gray-400'
+                );
+
+            }
+
+        }
+    );
+
+
+    shippingSubdistrict.addEventListener(
+        'input',
+        function () {
+
+            if (
+                normalizeText(
+                    this.value
+                )
+            ) {
+
+                subdistrictHint.textContent =
+                    'Kelurahan/Desa sudah diisi.';
+
+                subdistrictHint.classList.remove(
+                    'text-gray-400'
+                );
+
+                subdistrictHint.classList.add(
+                    'text-green-600'
+                );
+
+            } else {
+
+                subdistrictHint.textContent =
+                    'Lengkapi Kelurahan/Desa terlebih dahulu.';
+
+                subdistrictHint.classList.remove(
+                    'text-green-600'
+                );
+
+                subdistrictHint.classList.add(
+                    'text-gray-400'
+                );
+
+            }
+
+        }
+    );
+
+
+    shippingPostalCode.addEventListener(
+        'input',
+        function () {
+
+            if (
+                normalizeText(
+                    this.value
+                )
+            ) {
+
+                postalCodeHint.textContent =
+                    'Kode pos sudah diisi.';
+
+                postalCodeHint.classList.remove(
+                    'text-gray-400'
+                );
+
+                postalCodeHint.classList.add(
+                    'text-green-600'
+                );
+
+            } else {
+
+                postalCodeHint.textContent =
+                    'Lengkapi kode pos terlebih dahulu.';
+
+                postalCodeHint.classList.remove(
+                    'text-green-600'
+                );
+
+                postalCodeHint.classList.add(
+                    'text-gray-400'
+                );
+
+            }
+
+        }
+    );
+
+
+    shippingAddress.addEventListener(
+        'input',
+        function () {
+
+            if (
+                normalizeText(
+                    this.value
+                )
+            ) {
+
+                addressDetailHint.textContent =
+                    'Detail alamat sudah diisi.';
+
+                addressDetailHint.classList.remove(
+                    'text-gray-400'
+                );
+
+                addressDetailHint.classList.add(
+                    'text-green-600'
+                );
+
+            } else {
+
+                addressDetailHint.textContent =
+                    'Lengkapi detail alamat terlebih dahulu.';
+
+                addressDetailHint.classList.remove(
+                    'text-green-600'
+                );
+
+                addressDetailHint.classList.add(
+                    'text-gray-400'
+                );
+
+            }
+
+        }
+    );
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FORM SUBMIT VALIDATION
+    |--------------------------------------------------------------------------
+    */
+
+    checkoutForm.addEventListener(
+        'submit',
+        function (event) {
+
+
+            const province =
+                normalizeText(
+                    shippingProvince.value
+                );
+
+            const city =
+                normalizeText(
+                    shippingCity.value
+                );
+
+            const district =
+                normalizeText(
+                    shippingDistrict.value
+                );
+
+            const subdistrict =
+                normalizeText(
+                    shippingSubdistrict.value
+                );
+
+            const postalCode =
+                normalizeText(
+                    shippingPostalCode.value
+                );
+
+            const address =
+                normalizeText(
+                    shippingAddress.value
+                );
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | PROVINCE
+            |--------------------------------------------------------------------------
+            */
+
+            if (!province) {
+
+                event.preventDefault();
+
+                shippingProvince.focus();
+
+                addressProgressTitle.textContent =
+                    'Provinsi wajib diisi';
+
+                addressProgressText.textContent =
+                    'Silakan lengkapi Provinsi sebelum melanjutkan.';
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | CITY
+            |--------------------------------------------------------------------------
+            */
+
+            if (!city) {
+
+                event.preventDefault();
+
+                unlockField(
+                    shippingCity,
+                    'Masukkan Kabupaten / Kota'
+                );
+
+                shippingCity.focus();
+
+                addressProgressTitle.textContent =
+                    'Kabupaten / Kota wajib diisi';
+
+                addressProgressText.textContent =
+                    'Silakan lengkapi Kabupaten/Kota sebelum melanjutkan.';
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | DISTRICT
+            |--------------------------------------------------------------------------
+            */
+
+            if (!district) {
+
+                event.preventDefault();
+
+                unlockField(
+                    shippingDistrict,
+                    'Masukkan Kecamatan'
+                );
+
+                shippingDistrict.focus();
+
+                addressProgressTitle.textContent =
+                    'Kecamatan wajib diisi';
+
+                addressProgressText.textContent =
+                    'Silakan lengkapi Kecamatan sebelum melanjutkan.';
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | SUBDISTRICT
+            |--------------------------------------------------------------------------
+            */
+
+            if (!subdistrict) {
+
+                event.preventDefault();
+
+                unlockField(
+                    shippingSubdistrict,
+                    'Masukkan Kelurahan / Desa'
+                );
+
+                shippingSubdistrict.focus();
+
+                addressProgressTitle.textContent =
+                    'Kelurahan / Desa wajib diisi';
+
+                addressProgressText.textContent =
+                    'Silakan lengkapi Kelurahan/Desa sebelum melanjutkan.';
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | POSTAL CODE
+            |--------------------------------------------------------------------------
+            */
+
+            if (!postalCode) {
+
+                event.preventDefault();
+
+                unlockField(
+                    shippingPostalCode,
+                    'Masukkan kode pos'
+                );
+
+                shippingPostalCode.focus();
+
+                addressProgressTitle.textContent =
+                    'Kode Pos wajib diisi';
+
+                addressProgressText.textContent =
+                    'Silakan lengkapi kode pos sebelum melanjutkan.';
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | DETAIL ADDRESS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!address) {
+
+                event.preventDefault();
+
+                unlockField(
+                    shippingAddress,
+                    'Nama jalan, nomor rumah, RT/RW, perumahan, patokan...'
+                );
+
+                shippingAddress.focus();
+
+                addressProgressTitle.textContent =
+                    'Detail alamat wajib diisi';
+
+                addressProgressText.textContent =
+                    'Silakan lengkapi detail alamat sebelum melanjutkan.';
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | DESTINATION ID
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !destinationId.value
+            ) {
+
+                event.preventDefault();
+
+                destinationSearch.focus();
+
+                destinationSearchStatus.textContent =
+                    'Pilih wilayah RajaOngkir';
+
+                destinationSearchStatus.classList.remove(
+                    'text-gray-400'
+                );
+
+                destinationSearchStatus.classList.add(
+                    'text-red-600'
+                );
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | SHIPPING
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !shippingCourier.value ||
+                !shippingService.value ||
+                shippingCost.value === ''
+            ) {
+
+                event.preventDefault();
+
+                shippingStatus.scrollIntoView(
+                    {
+                        behavior: 'smooth',
+                        block: 'center'
+                    }
+                );
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | PAYMENT
+            |--------------------------------------------------------------------------
+            */
+
+            const selectedPayment =
+                document.querySelector(
+                    'input[name="payment_method_id"]:checked'
+                );
+
+
+            if (
+                !selectedPayment
+            ) {
+
+                event.preventDefault();
+
+                const paymentSection =
+                    document.querySelector(
+                        '.payment-method-card'
+                    );
+
+
+                if (paymentSection) {
+
+                    paymentSection.scrollIntoView(
+                        {
+                            behavior: 'smooth',
+                            block: 'center'
+                        }
+                    );
+
+                }
+
+                return;
+
+            }
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | DISABLE BUTTON
+            |--------------------------------------------------------------------------
+            */
+
+            submitCheckout.disabled =
+                true;
+
+
+            submitCheckout.innerHTML =
+                '<span>Membuat pesanan, mohon tunggu...</span>';
+
+        }
+    );
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INITIAL ADDRESS STATE
+    |--------------------------------------------------------------------------
+    */
+
+    updateAddressProgress();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INITIAL TOTAL
+    |--------------------------------------------------------------------------
+    */
+
+    updateTotal();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INITIAL OLD DESTINATION
+    |--------------------------------------------------------------------------
+    |
+    | Jika ada old destination_id dari validasi sebelumnya,
+    | jangan langsung menghitung ongkir karena detail wilayah
+    | belum tentu tersedia lengkap dari response sebelumnya.
+    |
+    */
+
+    if (
+        destinationId.value &&
+        destinationName.value
+    ) {
+
+        selectedDestinationText.textContent =
+            destinationName.value;
+
+        selectedDestination.classList.remove(
+            'hidden'
+        );
+
+        destinationSearchStatus.textContent =
+            'Wilayah sebelumnya dipilih';
+
+        destinationSearchStatus.classList.remove(
+            'text-gray-400'
+        );
+
+        destinationSearchStatus.classList.add(
+            'text-green-600'
+        );
+
+    }
+
+
+});
+
+</script>
+
+@endsection

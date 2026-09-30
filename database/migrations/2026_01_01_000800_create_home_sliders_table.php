@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema;
+return new class extends Migration { public function up(): void { Schema::create('home_sliders', function (Blueprint $t) { $t->id(); $t->string('eyebrow')->nullable(); $t->string('title'); $t->string('accent_text')->nullable(); $t->text('description')->nullable(); $t->string('button_text')->nullable(); $t->string('button_url')->nullable(); $t->string('image')->nullable(); $t->string('theme')->default('maroon_gold'); $t->unsignedInteger('sort_order')->default(0); $t->boolean('is_active')->default(true); $t->timestamps(); }); } public function down(): void { Schema::dropIfExists('home_sliders'); } };

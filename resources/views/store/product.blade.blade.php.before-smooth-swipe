@@ -1,0 +1,1532 @@
+@extends('layouts.store')
+
+@section('title', $product->name.' — Zalina Fashion')
+
+@section('content')
+
+@php
+    $activeVariants = $product->variants
+        ->where('is_active', true)
+        ->values();
+
+    $hasStock = (int) $product->stock > 0;
+
+    $maxQuantity = max(1, (int) $product->stock);
+
+    $hasSale = $product->sale_price
+        && $product->price
+        && (float) $product->sale_price < (float) $product->price;
+
+    $discountPercentage = $hasSale
+        ? round((1 - ($product->sale_price / $product->price)) * 100)
+        : 0;
+
+    $mainImage = $product->image
+        ? asset('storage/'.$product->image)
+        : null;
+
+    $fallbackDescription = 'Hijab premium Zalina yang dirancang dengan bahan pilihan, lembut, adem, dan nyaman digunakan sepanjang hari. Cocok untuk aktivitas formal maupun santai.';
+
+    $waNumber = '628133117767';
+
+    $waMessage = rawurlencode('Halo Zalina, saya mau tanya soal produk: '.$product->name);
+
+    $waLink = 'https://wa.me/'.$waNumber.'?text='.$waMessage;
+@endphp
+
+<style>
+    /* =========================================================
+       ZALINA PRODUCT PAGE
+    ========================================================= */
+
+    .zalina-product-page {
+        color: #351820;
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(243, 226, 216, .38),
+                transparent 34rem
+            ),
+            #fffaf8;
+        overflow-x: hidden;
+    }
+
+    .zalina-product-page a,
+    .zalina-product-page button {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .zalina-product-page button:focus-visible,
+    .zalina-product-page a:focus-visible,
+    .zalina-product-page input:focus-visible {
+        outline: 3px solid rgba(114, 47, 63, .22);
+        outline-offset: 3px;
+    }
+
+    /* =========================================================
+       BREADCRUMB
+    ========================================================= */
+
+    .zalina-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        color: #8b6570;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .zalina-breadcrumb a {
+        transition: color .2s ease;
+    }
+
+    .zalina-breadcrumb a:hover {
+        color: #722f3f;
+    }
+
+    .zalina-breadcrumb-current {
+        min-width: 0;
+        max-width: 210px;
+        overflow: hidden;
+        color: #5b303b;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* =========================================================
+       PRODUCT IMAGE
+    ========================================================= */
+
+    .zalina-product-image {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid #ead7db;
+        border-radius: 28px;
+        background:
+            linear-gradient(
+                135deg,
+                #fff0f3 0%,
+                #fffaf8 52%,
+                #f8eddf 100%
+            );
+        box-shadow: 0 18px 55px rgba(91, 48, 59, .08);
+    }
+
+    .zalina-product-image img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .zalina-image-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .zalina-image-fallback span {
+        color: #dcbec5;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(6rem, 20vw, 11rem);
+        line-height: 1;
+        user-select: none;
+    }
+
+    .zalina-sale-badge {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #722f3f;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .04em;
+        box-shadow: 0 8px 20px rgba(114, 47, 63, .2);
+    }
+
+    .zalina-image-count {
+        position: absolute;
+        right: 16px;
+        bottom: 16px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 32px;
+        padding: 7px 11px;
+        border: 1px solid rgba(255, 255, 255, .75);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .84);
+        color: #5b303b;
+        font-size: 11px;
+        font-weight: 700;
+        backdrop-filter: blur(10px);
+    }
+
+    .zalina-thumbnail-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 9px;
+        margin-top: 12px;
+    }
+
+    .zalina-thumbnail {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        border: 1px solid #ead7db;
+        border-radius: 15px;
+        background: #fff4f5;
+    }
+
+    .zalina-thumbnail img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .zalina-thumbnail-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #c9aeb5;
+    }
+
+    /* =========================================================
+       PRODUCT INFORMATION
+    ========================================================= */
+
+    .zalina-product-info {
+        min-width: 0;
+    }
+
+    .zalina-category-label {
+        color: #a47a43;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .22em;
+        line-height: 1.5;
+        text-transform: uppercase;
+    }
+
+    .zalina-product-title {
+        margin-top: 10px;
+        color: #351820;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        font-weight: 500;
+        letter-spacing: -.025em;
+        line-height: 1.13;
+        overflow-wrap: anywhere;
+    }
+
+    .zalina-price-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        margin-top: 20px;
+    }
+
+    .zalina-current-price {
+        color: #722f3f;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.7rem, 4vw, 2.15rem);
+        font-weight: 700;
+        letter-spacing: -.02em;
+        line-height: 1.2;
+    }
+
+    .zalina-old-price {
+        color: #b8959e;
+        font-size: 15px;
+        text-decoration: line-through;
+    }
+
+    .zalina-special-price {
+        display: inline-flex;
+        align-items: center;
+        min-height: 25px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #f3e3c9;
+        color: #79572c;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .03em;
+    }
+
+    .zalina-stock-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        margin-top: 15px;
+        color: #8b6570;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .zalina-stock-dot {
+        width: 8px;
+        height: 8px;
+        flex: 0 0 auto;
+        border-radius: 999px;
+    }
+
+    .zalina-stock-dot.available {
+        background: #22a06b;
+    }
+
+    .zalina-stock-dot.empty {
+        background: #dc5b68;
+    }
+
+    .zalina-stock-available {
+        color: #198754;
+        font-weight: 700;
+    }
+
+    .zalina-stock-empty {
+        color: #c2414d;
+        font-weight: 700;
+    }
+
+    .zalina-stock-separator {
+        color: #d0b8be;
+    }
+
+    /* =========================================================
+       DESCRIPTION
+    ========================================================= */
+
+    .zalina-description {
+        width: 100%;
+        min-width: 0;
+        margin-top: 24px;
+        padding: 18px;
+        border: 1px solid #eadcdf;
+        border-radius: 19px;
+        background: #fff;
+        box-shadow: 0 8px 30px rgba(91, 48, 59, .035);
+    }
+
+    .zalina-description-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 11px;
+    }
+
+    .zalina-description-heading-line {
+        width: 28px;
+        height: 1px;
+        flex: 0 0 auto;
+        background: #c8a06a;
+    }
+
+    .zalina-description-heading-text {
+        color: #a47a43;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .22em;
+        line-height: 1.5;
+        text-transform: uppercase;
+    }
+
+    .zalina-description-content {
+        max-width: 100%;
+        color: #5b3a43;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.9;
+        overflow-wrap: anywhere;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+
+    /* =========================================================
+       VARIANTS
+    ========================================================= */
+
+    .zalina-variant-label {
+        position: relative;
+        display: inline-flex;
+        cursor: pointer;
+    }
+
+    .zalina-variant-label input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .zalina-variant-option {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        max-width: 100%;
+        padding: 10px 17px;
+        border: 1px solid #dfc9cf;
+        border-radius: 999px;
+        background: #fff;
+        color: #5b303b;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        text-align: center;
+        transition:
+            background .2s ease,
+            border-color .2s ease,
+            color .2s ease,
+            transform .2s ease,
+            box-shadow .2s ease;
+        user-select: none;
+    }
+
+    .zalina-variant-label:hover .zalina-variant-option {
+        border-color: #8f4b5c;
+        background: #fff8f9;
+        transform: translateY(-1px);
+    }
+
+    .zalina-variant-label input:checked + .zalina-variant-option {
+        border-color: #722f3f;
+        background: #722f3f;
+        color: #fff;
+        box-shadow: 0 7px 18px rgba(114, 47, 63, .18);
+    }
+
+    /* =========================================================
+       QUANTITY
+    ========================================================= */
+
+    .zalina-qty {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        height: 50px;
+        overflow: hidden;
+        border: 1px solid #dfc9cf;
+        border-radius: 999px;
+        background: #fff;
+    }
+
+    .zalina-qty button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 50px;
+        color: #722f3f;
+        font-size: 20px;
+        font-weight: 700;
+        transition: background .2s ease;
+    }
+
+    .zalina-qty button:hover {
+        background: #fff4f6;
+    }
+
+    .zalina-qty input {
+        width: 48px;
+        height: 50px;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: #351820;
+        font-size: 14px;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .zalina-qty input::-webkit-outer-spin-button,
+    .zalina-qty input::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+    }
+
+    .zalina-qty input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    /* =========================================================
+       BUTTONS
+    ========================================================= */
+
+    .zalina-add-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 50px;
+        border-radius: 999px;
+        background: #722f3f;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 800;
+        box-shadow: 0 8px 25px rgba(114, 47, 63, .18);
+        transition:
+            background .2s ease,
+            box-shadow .2s ease,
+            transform .2s ease;
+    }
+
+    .zalina-add-button:hover {
+        background: #5f2634;
+        box-shadow: 0 10px 30px rgba(114, 47, 63, .24);
+        transform: translateY(-1px);
+    }
+
+    .zalina-add-button:active {
+        background: #4f202c;
+        transform: translateY(0);
+    }
+
+    .zalina-add-button:disabled {
+        cursor: not-allowed;
+        background: #d8c3c8;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .zalina-support-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        min-height: 48px;
+        padding: 0 18px;
+        border: 1px solid #ead7db;
+        border-radius: 999px;
+        background: #fff;
+        color: #722f3f;
+        font-size: 13px;
+        font-weight: 700;
+        transition:
+            background .2s ease,
+            border-color .2s ease;
+    }
+
+    .zalina-support-link:hover {
+        border-color: #d8b9c1;
+        background: #fff5f7;
+    }
+
+    .zalina-icon {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+    }
+
+    /* =========================================================
+       SIGNATURE SECTION
+    ========================================================= */
+
+    .zalina-signature {
+        position: relative;
+        margin-top: 48px;
+    }
+
+    .zalina-signature-line {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            #e8d4d9 15%,
+            #e8d4d9 85%,
+            transparent
+        );
+    }
+
+    .zalina-signature-number {
+        color: #c8a06a;
+        font-family: Georgia, "Times New Roman", serif;
+        line-height: 1;
+    }
+
+    .zalina-signature-item {
+        position: relative;
+        min-width: 0;
+    }
+
+    .zalina-signature-item::after {
+        position: absolute;
+        top: 10%;
+        right: 0;
+        width: 1px;
+        height: 80%;
+        background: #eadcdf;
+        content: "";
+    }
+
+    .zalina-signature-item:last-child::after {
+        display: none;
+    }
+
+    .zalina-signature-title {
+        color: #351820;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 19px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .zalina-signature-description {
+        margin-top: 9px;
+        color: #795d65;
+        font-size: 13px;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+    }
+
+    /* =========================================================
+       FLOATING SUPPORT BUTTON
+    ========================================================= */
+
+    .zalina-floating-support {
+        position: fixed;
+        right: 20px;
+        bottom: 22px;
+        z-index: 35;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border: 1px solid #ead7db;
+        border-radius: 999px;
+        background: #fff;
+        color: #722f3f;
+        box-shadow: 0 10px 30px rgba(91, 48, 59, .14);
+        transition:
+            background .2s ease,
+            transform .2s ease;
+    }
+
+    .zalina-floating-support:hover {
+        background: #fff5f7;
+        transform: translateY(-2px);
+    }
+
+    /* =========================================================
+       MOBILE STICKY CART
+    ========================================================= */
+
+    .zalina-mobile-cart {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 40;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid #eadcdf;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 -8px 30px rgba(91, 48, 59, .08);
+        backdrop-filter: blur(16px);
+    }
+
+    .zalina-mobile-cart-inner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 1280px;
+        margin: 0 auto;
+    }
+
+    .zalina-mobile-cart-price {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .zalina-mobile-cart-label {
+        color: #a47a43;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .12em;
+        line-height: 1.5;
+        text-transform: uppercase;
+    }
+
+    .zalina-mobile-cart-value {
+        margin-top: 2px;
+        overflow: hidden;
+        color: #722f3f;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.3;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .zalina-mobile-cart-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: 999px;
+        background: #722f3f;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (min-width: 1024px) {
+        .zalina-product-image {
+            aspect-ratio: 4 / 5;
+            border-radius: 32px;
+        }
+
+        .zalina-description {
+            padding: 20px;
+        }
+
+        .zalina-description-content {
+            font-size: 15px;
+            line-height: 1.9;
+        }
+
+        .zalina-signature {
+            margin-top: 58px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .zalina-breadcrumb {
+            font-size: 11px;
+        }
+
+        .zalina-breadcrumb-current {
+            max-width: 155px;
+        }
+
+        .zalina-product-image {
+            border-radius: 22px;
+        }
+
+        .zalina-sale-badge {
+            top: 13px;
+            left: 13px;
+        }
+
+        .zalina-image-count {
+            right: 12px;
+            bottom: 12px;
+        }
+
+        .zalina-thumbnail-grid {
+            gap: 7px;
+            margin-top: 9px;
+        }
+
+        .zalina-thumbnail {
+            border-radius: 11px;
+        }
+
+        .zalina-product-title {
+            margin-top: 8px;
+            font-size: 31px;
+        }
+
+        .zalina-price-row {
+            margin-top: 16px;
+        }
+
+        .zalina-current-price {
+            font-size: 28px;
+        }
+
+        .zalina-description {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 16px;
+        }
+
+        .zalina-description-content {
+            font-size: 13px;
+            line-height: 1.85;
+        }
+
+        .zalina-variant-option {
+            min-height: 42px;
+            padding: 9px 14px;
+            font-size: 12px;
+        }
+
+        .zalina-signature {
+            margin-top: 42px;
+        }
+
+        .zalina-signature-item::after {
+            display: none;
+        }
+
+        .zalina-signature-item + .zalina-signature-item {
+            border-top: 1px solid #eadcdf;
+        }
+
+        .zalina-floating-support {
+            right: 16px;
+            bottom: 88px;
+            width: 44px;
+            height: 44px;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .zalina-mobile-cart {
+            padding-right: 12px;
+            padding-left: 12px;
+        }
+
+        .zalina-mobile-cart-inner {
+            gap: 9px;
+        }
+
+        .zalina-mobile-cart-button {
+            padding: 0 14px;
+            font-size: 12px;
+        }
+
+        .zalina-mobile-cart-value {
+            font-size: 16px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .zalina-product-page *,
+        .zalina-product-page *::before,
+        .zalina-product-page *::after {
+            scroll-behavior: auto !important;
+            transition-duration: .01ms !important;
+            animation-duration: .01ms !important;
+        }
+    }
+</style>
+
+<div class="zalina-product-page min-h-screen pb-32 lg:pb-0">
+
+    {{-- =========================================================
+         BREADCRUMB
+    ========================================================== --}}
+    <div class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+
+        <nav class="zalina-breadcrumb" aria-label="Breadcrumb">
+
+            <a href="{{ route('home') }}">
+                Beranda
+            </a>
+
+            <span aria-hidden="true" class="text-[#c9aeb5]">/</span>
+
+            <a href="{{ route('shop') }}">
+                Koleksi
+            </a>
+
+            <span aria-hidden="true" class="text-[#c9aeb5]">/</span>
+
+            <span class="zalina-breadcrumb-current" title="{{ $product->name }}">
+                {{ $product->name }}
+            </span>
+
+        </nav>
+
+    </div>
+
+    {{-- =========================================================
+         MAIN PRODUCT AREA
+    ========================================================== --}}
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+
+        <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+
+            {{-- =================================================
+                 LEFT — PRODUCT IMAGE SLIDER
+            ================================================== --}}
+            @php
+                $sliderImages = collect();
+
+                if ($product->image) {
+                    $sliderImages->push(asset('storage/' . ltrim($product->image, '/')));
+                }
+
+                foreach ($product->images->sortBy('sort_order') as $galleryImage) {
+                    if (!empty($galleryImage->path)) {
+                        $sliderImages->push(asset('storage/' . ltrim($galleryImage->path, '/')));
+                    }
+                }
+
+                $sliderImages = $sliderImages->filter()->values();
+            @endphp
+
+            <div class="w-full min-w-0 lg:sticky lg:top-24">
+                <div class="mx-auto w-full max-w-[560px]">
+
+                    <div
+                        x-data="{
+                            images: @js($sliderImages->all()),
+                            active: 0,
+                            next() {
+                                if (this.images.length > 1) {
+                                    this.active = (this.active + 1) % this.images.length;
+                                }
+                            },
+                            previous() {
+                                if (this.images.length > 1) {
+                                    this.active = (this.active - 1 + this.images.length) % this.images.length;
+                                }
+                            },
+                            touchStartX: 0,
+                            touchEndX: 0,
+                            handleTouchStart(event) {
+                                if (event.touches && event.touches.length > 0) {
+                                    this.touchStartX = event.touches[0].clientX;
+                                }
+                            },
+                            handleTouchEnd(event) {
+                                if (event.changedTouches && event.changedTouches.length > 0) {
+                                    this.touchEndX = event.changedTouches[0].clientX;
+                                    const distance = this.touchEndX - this.touchStartX;
+
+                                    if (Math.abs(distance) >= 50) {
+                                        if (distance < 0) {
+                                            this.next();
+                                        } else {
+                                            this.previous();
+                                        }
+                                    }
+                                }
+                            }
+                        }"
+                        class="relative"
+                    >
+
+                        <div
+                            class="zalina-product-image overflow-hidden touch-pan-y select-none"
+                            @touchstart.passive="handleTouchStart($event)"
+                            @touchend.passive="handleTouchEnd($event)"
+                        >
+                            <template x-if="images.length > 0">
+                                <img
+                                    :src="images[active]"
+                                    src="{{ $mainImage }}"
+                                    alt="{{ $product->name }}"
+                                    loading="eager"
+                                    class="h-full w-full object-cover transition-opacity duration-300"
+                                >
+                            </template>
+
+                            <template x-if="images.length === 0">
+                                <div class="zalina-image-fallback">
+                                    <span>{{ mb_substr($product->name, 0, 1) }}</span>
+                                </div>
+                            </template>
+
+                            @if($hasSale)
+                                <span class="zalina-sale-badge">
+                                    -{{ $discountPercentage }}%
+                                </span>
+                            @endif
+
+                            <template x-if="images.length > 1">
+                                <div>
+                                    <button
+                                        type="button"
+                                        @click="previous()"
+                                        class="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 text-lg text-[#8b1e3f] shadow-md"
+                                        aria-label="Gambar sebelumnya"
+                                    >
+                                        ‹
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        @click="next()"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 text-lg text-[#8b1e3f] shadow-md"
+                                        aria-label="Gambar berikutnya"
+                                    >
+                                        ›
+                                    </button>
+                                </div>
+                            </template>
+
+                            <template x-if="images.length > 0">
+                                <span class="zalina-image-count" x-text="(active + 1) + ' / ' + images.length + ' Foto'"></span>
+                            </template>
+                        </div>
+
+                        <template x-if="images.length > 1">
+                            <div class="zalina-thumbnail-grid mt-4">
+                                <template x-for="(image, index) in images" :key="image + index">
+                                    <button
+                                        type="button"
+                                        @click="active = index"
+                                        class="zalina-thumbnail overflow-hidden rounded-xl border-2 transition"
+                                        :class="active === index ? 'border-[#8b1e3f]' : 'border-transparent'"
+                                    >
+                                        <img
+                                            :src="image"
+                                            :alt="'{{ $product->name }} thumbnail ' + (index + 1)"
+                                            class="h-full w-full object-cover"
+                                            loading="lazy"
+                                        >
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+
+                    </div>
+                </div>
+            </div>
+
+            {{-- =================================================
+                 RIGHT — PRODUCT INFORMATION
+            ================================================== --}}
+            <div class="zalina-product-info w-full">
+
+                {{-- CATEGORY --}}
+                <div class="zalina-category-label">
+                    {{ $product->category?->name ?? 'Zalina Fashion' }}
+                </div>
+
+                {{-- PRODUCT NAME --}}
+                <h1 class="zalina-product-title">
+                    {{ $product->name }}
+                </h1>
+
+                {{-- PRICE --}}
+                <div class="zalina-price-row">
+
+                    <span class="zalina-current-price">
+                        Rp {{ number_format($product->current_price, 0, ',', '.') }}
+                    </span>
+
+                    @if($hasSale)
+
+                        <span class="zalina-old-price">
+                            Rp {{ number_format($product->price, 0, ',', '.') }}
+                        </span>
+
+                        <span class="zalina-special-price">
+                            Harga Spesial
+                        </span>
+
+                    @endif
+
+                </div>
+
+                {{-- STOCK + SKU --}}
+                <div class="zalina-stock-row">
+
+                    @if($hasStock)
+
+                        <span class="zalina-stock-dot available"></span>
+
+                        <span class="zalina-stock-available">
+                            Stok tersedia
+                        </span>
+
+                        <span class="text-[#bda4aa]">
+                            ({{ $product->stock }})
+                        </span>
+
+                    @else
+
+                        <span class="zalina-stock-dot empty"></span>
+
+                        <span class="zalina-stock-empty">
+                            Stok habis
+                        </span>
+
+                    @endif
+
+                    @if($product->sku)
+
+                        <span class="zalina-stock-separator" aria-hidden="true">
+                            •
+                        </span>
+
+                        <span>
+                            SKU: {{ $product->sku }}
+                        </span>
+
+                    @endif
+
+                </div>
+
+                {{-- DESCRIPTION --}}
+                <section class="zalina-description" aria-labelledby="description-title">
+
+                    <div class="zalina-description-heading">
+
+                        <span class="zalina-description-heading-line"></span>
+
+                        <h2
+                            id="description-title"
+                            class="zalina-description-heading-text"
+                        >
+                            About the piece
+                        </h2>
+
+                    </div>
+
+                    <p class="zalina-description-content">
+                        {{ $product->description ?: $fallbackDescription }}
+                    </p>
+
+                </section>
+
+                {{-- ADD TO CART FORM --}}
+                <form
+                    id="add-to-cart-form"
+                    method="POST"
+                    action="{{ route('cart.add', $product) }}"
+                    class="mt-7 sm:mt-8"
+                    x-data="{ qty: 1 }"
+                >
+
+                    @csrf
+
+                    {{-- VARIANTS --}}
+                    @if($activeVariants->count() > 0)
+
+                        <section>
+
+                            <div class="mb-3 flex items-start justify-between gap-4">
+
+                                <div class="min-w-0">
+
+                                    <h2 class="text-sm font-bold uppercase tracking-[.12em] text-[#4d2832]">
+                                        Pilih Varian
+                                    </h2>
+
+                                    <p class="mt-1 text-xs leading-5 text-[#9a7881]">
+                                        Pilih warna favoritmu
+                                    </p>
+
+                                </div>
+
+                                <span class="shrink-0 text-[10px] font-semibold uppercase tracking-[.15em] text-[#b18a51]">
+                                    Color
+                                </span>
+
+                            </div>
+
+                            <div class="flex flex-wrap gap-2.5">
+
+                                @foreach($activeVariants as $variant)
+
+                                    <label class="zalina-variant-label">
+
+                                        <input
+                                            type="radio"
+                                            name="variant_id"
+                                            value="{{ $variant->id }}"
+                                            @checked($loop->first)
+                                        >
+
+                                        <span class="zalina-variant-option">
+                                            {{ $variant->name }}
+                                        </span>
+
+                                    </label>
+
+                                @endforeach
+
+                            </div>
+
+                        </section>
+
+                    @endif
+
+                    {{-- QUANTITY + ADD TO CART --}}
+                    <div class="mt-7 sm:mt-8">
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
+
+                            {{-- QUANTITY --}}
+                            <div class="zalina-qty">
+
+                                <button
+                                    type="button"
+                                    @click="qty = Math.max(1, qty - 1)"
+                                    aria-label="Kurangi jumlah"
+                                >
+                                    −
+                                </button>
+
+                                <input
+                                    type="number"
+                                    name="quantity"
+                                    value="1"
+                                    min="1"
+                                    max="{{ $maxQuantity }}"
+                                    x-model.number="qty"
+                                    @input="qty = Math.max(1, Math.min({{ $maxQuantity }}, Number($event.target.value) || 1))"
+                                    aria-label="Jumlah produk"
+                                >
+
+                                <button
+                                    type="button"
+                                    @click="qty = Math.min({{ $maxQuantity }}, qty + 1)"
+                                    aria-label="Tambah jumlah"
+                                >
+                                    +
+                                </button>
+
+                            </div>
+
+                            {{-- ADD TO CART --}}
+                            <button
+                                type="submit"
+                                @disabled(!$hasStock)
+                                class="zalina-add-button w-full flex-1 px-6 sm:w-auto sm:px-8"
+                            >
+
+                                <svg
+                                    class="zalina-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6"/>
+                                    <circle cx="10" cy="20" r="1"/>
+                                    <circle cx="18" cy="20" r="1"/>
+                                    <path d="M12 5v6m-3-3h6"/>
+                                </svg>
+
+                                {{ $hasStock ? 'Tambah ke Keranjang' : 'Stok Habis' }}
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+                {{-- SUPPORT LINK --}}
+                <div class="mt-4 flex flex-wrap gap-3">
+
+                    <a
+                        href="{{ $waLink }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="zalina-support-link"
+                    >
+
+                        <svg
+                            class="zalina-icon"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                        >
+                            <path d="M12 2a10 10 0 00-8.66 15l-1.18 4.3 4.4-1.15A10 10 0 1012 2zm5.2 14.1c-.22.62-1.27 1.13-1.75 1.2-.45.07-1.03.1-1.66-.1-.38-.12-.87-.28-1.5-.55-2.65-1.14-4.38-3.8-4.51-3.98-.13-.18-1.08-1.44-1.08-2.74 0-1.3.68-1.94.92-2.2.24-.26.52-.33.69-.33h.5c.16 0 .37-.06.58.45.22.52.74 1.8.81 1.93.07.13.12.29.02.47-.1.18-.15.29-.3.44-.15.15-.31.33-.44.44-.15.15-.31.31-.13.6.18.29.8 1.31 1.72 2.12 1.18 1.05 2.18 1.38 2.48 1.53.3.15.48.13.66-.08.18-.21.76-.88.96-1.18.2-.3.4-.25.67-.15.28.1 1.76.83 2.06.98.3.15.5.22.57.34.07.12.07.7-.15 1.32z"/>
+                        </svg>
+
+                        Tanya Produk
+
+                    </a>
+
+                </div>
+
+                {{-- =================================================
+                     ZALINA SIGNATURE
+                ================================================== --}}
+                <section class="zalina-signature">
+
+                    <div class="zalina-signature-line"></div>
+
+                    <div class="flex flex-col gap-4 pb-6 pt-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-7 sm:pt-9">
+
+                        <div class="min-w-0">
+
+                            <div class="mb-3 flex items-center gap-3">
+
+                                <span class="text-[10px] font-bold uppercase tracking-[.3em] text-[#a47a43]">
+                                    Zalina Signature
+                                </span>
+
+                                <span class="h-px w-10 bg-[#c8a06a]"></span>
+
+                            </div>
+
+                            <h2 class="font-serif text-2xl font-medium leading-tight text-[#351820] sm:text-3xl">
+                                Made for your moments.
+                            </h2>
+
+                            <p class="mt-2 max-w-xl text-xs leading-6 text-[#856b73] sm:text-sm">
+                                Detail sederhana, karakter yang terasa.
+                                Temukan sentuhan Zalina dalam setiap pilihan.
+                            </p>
+
+                        </div>
+
+                        <div class="hidden text-right sm:block">
+
+                            <div class="text-[9px] uppercase tracking-[.25em] text-[#b99da5]">
+                                Zalina Fashion
+                            </div>
+
+                            <div class="mt-1 font-serif text-sm italic text-[#8a6871]">
+                                Elegance in Every Drape
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="grid grid-cols-1 border-y border-[#eadcdf] sm:grid-cols-3">
+
+                        {{-- SIGNATURE 01 --}}
+                        <div class="zalina-signature-item py-6 sm:py-8 sm:pr-7">
+
+                            <div class="flex items-start gap-4">
+
+                                <span class="zalina-signature-number text-2xl sm:text-3xl">
+                                    01
+                                </span>
+
+                                <div class="min-w-0">
+
+                                    <div class="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#a47a43]">
+                                        The Feel
+                                    </div>
+
+                                    <div class="zalina-signature-title">
+                                        Lembut & Nyaman
+                                    </div>
+
+                                    <p class="zalina-signature-description">
+                                        Dibuat untuk terasa ringan,
+                                        nyaman, dan effortless sepanjang hari.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {{-- SIGNATURE 02 --}}
+                        <div class="zalina-signature-item py-6 sm:px-7 sm:py-8">
+
+                            <div class="flex items-start gap-4">
+
+                                <span class="zalina-signature-number text-2xl sm:text-3xl">
+                                    02
+                                </span>
+
+                                <div class="min-w-0">
+
+                                    <div class="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#a47a43]">
+                                        The Collection
+                                    </div>
+
+                                    <div class="zalina-signature-title">
+                                        Zalina Signature
+                                    </div>
+
+                                    <p class="zalina-signature-description">
+                                        Sebuah pilihan yang dirancang
+                                        untuk melengkapi gaya personalmu.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {{-- SIGNATURE 03 --}}
+                        <div class="zalina-signature-item py-6 sm:py-8 sm:pl-7">
+
+                            <div class="flex items-start gap-4">
+
+                                <span class="zalina-signature-number text-2xl sm:text-3xl">
+                                    03
+                                </span>
+
+                                <div class="min-w-0">
+
+                                    <div class="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#a47a43]">
+                                        Availability
+                                    </div>
+
+                                    <div class="zalina-signature-title">
+
+                                        @if($hasStock)
+                                            Ready to Wear
+                                        @else
+                                            Currently Unavailable
+                                        @endif
+
+                                    </div>
+
+                                    <p class="zalina-signature-description">
+
+                                        @if($hasStock)
+                                            Siap menjadi bagian
+                                            dari koleksi harianmu.
+                                        @else
+                                            Produk sedang belum tersedia
+                                            untuk dipesan.
+                                        @endif
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:py-9">
+
+                        <div>
+
+                            <div class="mb-2 text-[9px] font-bold uppercase tracking-[.25em] text-[#a47a43]">
+                                Zalina Philosophy
+                            </div>
+
+                            <p class="font-serif text-base italic text-[#6d4b54] sm:text-lg">
+                                “Elegance in every drape.”
+                            </p>
+
+                        </div>
+
+                        <div class="flex items-center gap-3">
+
+                            <span class="h-px w-12 bg-[#c8a06a]"></span>
+
+                            <span class="text-[9px] font-semibold uppercase tracking-[.25em] text-[#a47a43]">
+                                ZALINA FASHION
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="zalina-signature-line"></div>
+
+                </section>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{{-- =============================================================
+     FLOATING SUPPORT ICON
+============================================================= --}}
+<a
+    href="{{ $waLink }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="zalina-floating-support"
+    aria-label="Hubungi Zalina via WhatsApp"
+    title="Tanya via WhatsApp"
+>
+
+    <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
+    >
+        <path d="M12 2a10 10 0 00-8.66 15l-1.18 4.3 4.4-1.15A10 10 0 1012 2zm5.2 14.1c-.22.62-1.27 1.13-1.75 1.2-.45.07-1.03.1-1.66-.1-.38-.12-.87-.28-1.5-.55-2.65-1.14-4.38-3.8-4.51-3.98-.13-.18-1.08-1.44-1.08-2.74 0-1.3.68-1.94.92-2.2.24-.26.52-.33.69-.33h.5c.16 0 .37-.06.58.45.22.52.74 1.8.81 1.93.07.13.12.29.02.47-.1.18-.15.29-.3.44-.15.15-.31.33-.44.44-.15.15-.31.31-.13.6.18.29.8 1.31 1.72 2.12 1.18 1.05 2.18 1.38 2.48 1.53.3.15.48.13.66-.08.18-.21.76-.88.96-1.18.2-.3.4-.25.67-.15.28.1 1.76.83 2.06.98.3.15.5.22.57.34.07.12.07.7-.15 1.32z"/>
+    </svg>
+
+</a>
+
+{{-- =============================================================
+     MOBILE STICKY CART
+============================================================= --}}
+@if($hasStock)
+
+    <div class="zalina-mobile-cart lg:hidden">
+
+        <div class="zalina-mobile-cart-inner">
+
+            <div class="zalina-mobile-cart-price">
+
+                <div class="zalina-mobile-cart-label">
+                    Total
+                </div>
+
+                <div class="zalina-mobile-cart-value">
+                    Rp {{ number_format($product->current_price, 0, ',', '.') }}
+                </div>
+
+            </div>
+
+            <button
+                type="submit"
+                form="add-to-cart-form"
+                class="zalina-mobile-cart-button"
+            >
+
+                <svg
+                    class="zalina-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    aria-hidden="true"
+                >
+                    <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6"/>
+                    <circle cx="10" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
+                    <path d="M12 5v6m-3-3h6"/>
+                </svg>
+
+                Keranjang
+
+            </button>
+
+        </div>
+
+    </div>
+
+@endif
+
+@endsection
